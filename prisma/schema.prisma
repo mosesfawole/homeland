@@ -1,13 +1,337 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../app/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────
+
+enum Role {
+  USER
+  AGENT
+  ADMIN
+}
+
+enum PropertyType {
+  APARTMENT
+  SELF_CONTAIN
+  MINI_FLAT
+  DUPLEX
+  BUNGALOW
+  TERRACED
+  DETACHED
+  SEMI_DETACHED
+  PENTHOUSE
+  STUDIO
+  OFFICE
+  LAND
+  WAREHOUSE
+  SHOP
+}
+
+enum ListingType {
+  RENT
+  SALE
+}
+
+enum RentDuration {
+  MONTH
+  YEAR
+}
+
+enum PropertyStatus {
+  DRAFT
+  PENDING_REVIEW   // submitted, awaiting admin verification
+  ACTIVE           // verified and live
+  REJECTED
+  RENTED
+  SOLD
+  INACTIVE
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum VerificationStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+// ─────────────────────────────────────────────
+// USER
+// ─────────────────────────────────────────────
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  emailVerified DateTime?
+  name          String?
+  phone         String?
+  avatar        String?
+  role          Role     @default(USER)
+  password      String?  // null for OAuth users
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  agentProfile  AgentProfile?
+  bookings      Booking[]
+  favorites     Favorite[]
+  reviews       Review[]
+  reports       Report[]
+  accounts      Account[]     // NextAuth
+  sessions      Session[]     // NextAuth
+}
+
+// ─────────────────────────────────────────────
+// AGENT PROFILE
+// ─────────────────────────────────────────────
+
+model AgentProfile {
+  id                 String             @id @default(cuid())
+  userId             String             @unique
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Business details
+  agencyName         String?
+  bio                String?
+  yearsExperience    Int?
+  specialization     String[]           // e.g. ["residential", "commercial"]
+  whatsapp           String?
+  instagram          String?
+  website            String?
+
+  // KYC / Trust
+  verificationStatus VerificationStatus @default(UNVERIFIED)
+  govIdUrl           String?            // uploaded government ID
+  cacDocUrl          String?            // CAC document for agencies
+  verifiedAt         DateTime?
+  verifiedBy         String?            // admin user ID
+  rejectionReason    String?
+
+  // Stats (denormalized for performance)
+  totalListings      Int                @default(0)
+  totalSales         Int                @default(0)
+
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  properties         Property[]
+}
+
+// ─────────────────────────────────────────────
+// PROPERTY
+// ─────────────────────────────────────────────
+
+model Property {
+  id              String         @id @default(cuid())
+  agentProfileId  String
+  agentProfile    AgentProfile   @relation(fields: [agentProfileId], references: [id], onDelete: Cascade)
+
+  // Core fields (AI-parseable)
+  title           String
+  description     String
+  propertyType    PropertyType
+  listingType     ListingType
+  bedrooms        Int
+  bathrooms       Int?
+  toilets         Int?
+  price           Float
+  rentDuration    RentDuration?  // null for SALE listings
+  features        String[]       // e.g. ["24hr power", "running water", "security"]
+
+  // Location
+  address         String
+  city            String
+  state           String
+  country         String         @default("Nigeria")
+  latitude        Float?
+  longitude       Float?
+  neighborhood    String?        // e.g. "Lekki Phase 1"
+
+  // Media
+  images          PropertyImage[]
+  videos          PropertyVideo[]
+  virtualTourUrl  String?
+
+  // Status & Trust
+  status          PropertyStatus     @default(DRAFT)
+  verificationStatus VerificationStatus @default(UNVERIFIED)
+  verifiedAt      DateTime?
+  verifiedBy      String?
+  rejectionReason String?
+  isFeatured      Boolean            @default(false)
+  viewCount       Int                @default(0)
+
+  // AI metadata — track what was AI-generated vs manually entered
+  aiParsed        Boolean            @default(false)
+  aiRawInput      String?            // original description the agent pasted
+  aiConfidence    Float?             // optional confidence score
+
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  // Relations
+  bookings        Booking[]
+  reviews         Review[]
+  favorites       Favorite[]
+  reports         Report[]
+
+  @@index([city, state])
+  @@index([propertyType])
+  @@index([listingType])
+  @@index([price])
+  @@index([status])
+  @@index([agentProfileId])
+}
+
+// ─────────────────────────────────────────────
+// PROPERTY MEDIA
+// ─────────────────────────────────────────────
+
+model PropertyImage {
+  id          String   @id @default(cuid())
+  propertyId  String
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  url         String
+  publicId    String   // Cloudinary public ID for deletion
+  isPrimary   Boolean  @default(false)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+}
+
+model PropertyVideo {
+  id         String   @id @default(cuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  url        String
+  publicId   String
+  createdAt  DateTime @default(now())
+}
+
+// ─────────────────────────────────────────────
+// BOOKING
+// ─────────────────────────────────────────────
+
+model Booking {
+  id          String        @id @default(cuid())
+  userId      String
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  propertyId  String
+  property    Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  tourDate    DateTime
+  tourTime    String        // e.g. "10:00 AM"
+  message     String?       // note from user to agent
+  status      BookingStatus @default(PENDING)
+  agentNote   String?       // response from agent
+
+  confirmedAt DateTime?
+  cancelledAt DateTime?
+  cancelReason String?
+
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([propertyId])
+}
+
+// ─────────────────────────────────────────────
+// REVIEW
+// ─────────────────────────────────────────────
+
+model Review {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  propertyId  String
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  rating      Int      // 1-5
+  comment     String?
+  createdAt   DateTime @default(now())
+
+  @@unique([userId, propertyId]) // one review per property per user
+}
+
+// ─────────────────────────────────────────────
+// FAVORITES
+// ─────────────────────────────────────────────
+
+model Favorite {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, propertyId])
+}
+
+// ─────────────────────────────────────────────
+// REPORTS
+// ─────────────────────────────────────────────
+
+model Report {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  reason     String   // "fake listing", "wrong price", "scam", etc.
+  details    String?
+  resolved   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}
+
+// ─────────────────────────────────────────────
+// NEXTAUTH TABLES
+// ─────────────────────────────────────────────
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
 }
