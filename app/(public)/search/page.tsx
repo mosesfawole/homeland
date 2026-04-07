@@ -36,7 +36,12 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const res = await fetch(apiUrl, { cache: "no-store" });
   const json = await res.json().catch(() => ({}));
   const properties: PropertyCardData[] = res.ok ? (json.data ?? []) : [];
-  const meta = json.meta ?? { page: 1, totalPages: 1, hasMore: false };
+  const meta = json.meta ?? {
+    page: 1,
+    totalPages: 1,
+    hasMore: false,
+    total: properties.length,
+  };
 
   const query = queryParams.get("q") ?? "";
   const listingType = queryParams.get("listingType") ?? "";
@@ -88,7 +93,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         <section className="space-y-6">
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-500">
-              Showing {properties.length} results
+              Showing {properties.length} of {meta.total ?? properties.length}{" "}
+              results
             </p>
           </div>
 

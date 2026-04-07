@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
@@ -108,23 +108,19 @@ export default function PropertyForm({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-      {/* â”€â”€ AI Parser â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <AIDescriptionParser setValue={setValue} />
 
-      {/* â”€â”€ Server error â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {serverError && (
         <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">
           {serverError}
         </div>
       )}
 
-      {/* â”€â”€ Section: Basic Info â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <section className="bg-white rounded-xl border border-gray-100 p-6 space-y-5">
         <h2 className="text-base font-semibold text-gray-900">
           Basic Information
         </h2>
 
-        {/* Title */}
         <div>
           <label className={labelClass}>Listing Title *</label>
           <input
@@ -135,7 +131,6 @@ export default function PropertyForm({
           {errors.title && <p className={errorClass}>{errors.title.message}</p>}
         </div>
 
-        {/* Description */}
         <div>
           <label className={labelClass}>Full Description *</label>
           <textarea
@@ -149,7 +144,6 @@ export default function PropertyForm({
           )}
         </div>
 
-        {/* Property Type + Listing Type */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className={labelClass}>Property Type *</label>
@@ -192,7 +186,6 @@ export default function PropertyForm({
         </div>
       </section>
 
-      {/* â”€â”€ Section: Images â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <section className="bg-white rounded-xl border border-gray-100 p-6 space-y-5">
         <h2 className="text-base font-semibold text-gray-900">Images</h2>
         <PropertyImages
@@ -206,7 +199,6 @@ export default function PropertyForm({
         )}
       </section>
 
-      {/* â”€â”€ Section: Property Details â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <section className="bg-white rounded-xl border border-gray-100 p-6 space-y-5">
         <h2 className="text-base font-semibold text-gray-900">
           Property Details
@@ -245,10 +237,9 @@ export default function PropertyForm({
           </div>
         </div>
 
-        {/* Price + Rent Duration */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className={labelClass}>Price (â‚¦) *</label>
+            <label className={labelClass}>Price (NGN) *</label>
             <input
               type="number"
               min={0}
@@ -273,7 +264,6 @@ export default function PropertyForm({
         </div>
       </section>
 
-      {/* â”€â”€ Section: Location â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <section className="bg-white rounded-xl border border-gray-100 p-6 space-y-5">
         <h2 className="text-base font-semibold text-gray-900">Location</h2>
 
@@ -324,13 +314,11 @@ export default function PropertyForm({
         </div>
       </section>
 
-      {/* â”€â”€ Section: Features â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <section className="bg-white rounded-xl border border-gray-100 p-6 space-y-5">
         <h2 className="text-base font-semibold text-gray-900">
           Features & Amenities
         </h2>
 
-        {/* Common feature checkboxes */}
         <div className="flex flex-wrap gap-2">
           {COMMON_FEATURES.map((feature) => {
             const isSelected = selectedFeatures.includes(feature);
@@ -351,7 +339,6 @@ export default function PropertyForm({
           })}
         </div>
 
-        {/* Custom feature input */}
         <div className="flex gap-2">
           <input
             type="text"
@@ -376,7 +363,6 @@ export default function PropertyForm({
           </button>
         </div>
 
-        {/* Selected features as chips */}
         {selectedFeatures.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {selectedFeatures.map((feature) => (
@@ -398,7 +384,6 @@ export default function PropertyForm({
         )}
       </section>
 
-      {/* â”€â”€ Submit â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <div className="flex items-center gap-3 pb-8">
         <button
           type="submit"
@@ -423,4 +408,3 @@ export default function PropertyForm({
     </form>
   );
 }
-
