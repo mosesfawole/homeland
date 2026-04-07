@@ -45,7 +45,7 @@ export default function Footer() {
             Homeland connects verified agents with serious renters and buyers. We
             focus on transparency, verified listings, and frictionless booking.
           </p>
-          <p className="text-xs text-gray-400">© 2026 Homeland. All rights reserved.</p>
+          <p className="text-xs text-gray-400">Copyright 2026 Homeland. All rights reserved.</p>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-6 text-sm">

@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { sendBookingReceivedEmail } from "@/lib/email";
+
+export const runtime = "nodejs";
 
 const bookingSchema = z.object({
   propertyId: z.string().min(1),
@@ -30,7 +33,17 @@ export async function POST(req: NextRequest) {
     const { propertyId, tourDate, tourTime, message } = parsed.data;
     const property = await prisma.property.findUnique({
       where: { id: propertyId },
-      select: { id: true, status: true, agentProfileId: true },
+      select: {
+        id: true,
+        status: true,
+        title: true,
+        agentProfile: {
+          select: {
+            id: true,
+            user: { select: { email: true, name: true } },
+          },
+        },
+      },
     });
 
     if (!property || property.status !== "ACTIVE") {
@@ -57,6 +70,16 @@ export async function POST(req: NextRequest) {
         message,
         status: "PENDING",
       },
+    });
+
+    await sendBookingReceivedEmail({
+      agentEmail: property.agentProfile?.user?.email,
+      agentName: property.agentProfile?.user?.name,
+      propertyTitle: property.title,
+      tourDate: tourDateTime.toLocaleDateString("en-NG"),
+      tourTime,
+      userName: session.user.name ?? null,
+      bookingId: booking.id,
     });
 
     return NextResponse.json(

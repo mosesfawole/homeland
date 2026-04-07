@@ -195,7 +195,7 @@ export default async function LandingPage() {
             <div className="mt-6 space-y-3 text-sm">
               <div className="flex items-center justify-between">
                 <span className="text-slate-500">Price</span>
-                <span className="font-semibold text-slate-900">?3.5M / year</span>
+                <span className="font-semibold text-slate-900">NGN 3.5M / year</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-500">Agent</span>

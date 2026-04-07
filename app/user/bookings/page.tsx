@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import { timeAgo } from "@/lib/utils/format";
+import BookingCard from "@/components/booking/BookingCard";
 
 export const metadata = {
   title: "My Bookings - Homeland",
@@ -15,7 +15,7 @@ export default async function UserBookingsPage() {
     where: { userId: session.user.id },
     orderBy: { createdAt: "desc" },
     include: {
-      property: { select: { title: true } },
+      property: { select: { id: true, title: true } },
     },
   });
 
@@ -28,45 +28,17 @@ export default async function UserBookingsPage() {
         </p>
       </div>
 
-      <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
-        {bookings.length === 0 ? (
-          <div className="p-8 text-center text-sm text-gray-500">
-            No bookings yet.
-          </div>
-        ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-gray-500">
-              <tr>
-                <th className="text-left px-4 py-3 font-medium">Property</th>
-                <th className="text-left px-4 py-3 font-medium">Tour Date</th>
-                <th className="text-left px-4 py-3 font-medium">Status</th>
-                <th className="text-left px-4 py-3 font-medium">Requested</th>
-              </tr>
-            </thead>
-            <tbody>
-              {bookings.map((booking) => (
-                <tr key={booking.id} className="border-t border-gray-100">
-                  <td className="px-4 py-3 text-gray-900">
-                    {booking.property.title}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">
-                    {new Date(booking.tourDate).toLocaleDateString("en-NG")} at{" "}
-                    {booking.tourTime}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="text-xs font-semibold px-2 py-1 rounded-full bg-gray-100 text-gray-600">
-                      {booking.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-gray-500">
-                    {timeAgo(booking.createdAt)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+      {bookings.length === 0 ? (
+        <div className="bg-white border border-gray-100 rounded-xl p-8 text-center text-sm text-gray-500">
+          No bookings yet.
+        </div>
+      ) : (
+        <div className="grid gap-4">
+          {bookings.map((booking) => (
+            <BookingCard key={booking.id} booking={booking} role="USER" />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
