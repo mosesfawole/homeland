@@ -1,0 +1,125 @@
+import { z } from "zod";
+
+export const propertySchema = z.object({
+  // Core
+  title: z.string().min(5, "Title must be at least 5 characters").max(100),
+  description: z.string().min(20, "Description must be at least 20 characters"),
+  propertyType: z.enum([
+    "APARTMENT",
+    "SELF_CONTAIN",
+    "MINI_FLAT",
+    "DUPLEX",
+    "BUNGALOW",
+    "TERRACED",
+    "DETACHED",
+    "SEMI_DETACHED",
+    "PENTHOUSE",
+    "STUDIO",
+    "OFFICE",
+    "LAND",
+    "WAREHOUSE",
+    "SHOP",
+  ]),
+  listingType: z.enum(["RENT", "SALE"]),
+  bedrooms: z.number().int().min(0).max(20),
+  bathrooms: z.number().int().min(0).max(20).nullable().optional(),
+  toilets: z.number().int().min(0).max(20).nullable().optional(),
+  price: z.number().positive("Price must be greater than 0"),
+  rentDuration: z.enum(["MONTH", "YEAR"]).nullable().optional(),
+  features: z.array(z.string()).default([]),
+
+  // Location
+  address: z.string().min(5, "Address is required"),
+  city: z.string().min(2, "City is required"),
+  state: z.string().min(2, "State is required"),
+  neighborhood: z.string().nullable().optional(),
+
+  // AI metadata
+  aiParsed: z.boolean().default(false),
+  aiRawInput: z.string().nullable().optional(),
+});
+
+export type PropertyFormInput = z.infer<typeof propertySchema>;
+
+// Common Nigerian states for the dropdown
+export const NIGERIAN_STATES = [
+  "Abia",
+  "Adamawa",
+  "Akwa Ibom",
+  "Anambra",
+  "Bauchi",
+  "Bayelsa",
+  "Benue",
+  "Borno",
+  "Cross River",
+  "Delta",
+  "Ebonyi",
+  "Edo",
+  "Ekiti",
+  "Enugu",
+  "FCT",
+  "Gombe",
+  "Imo",
+  "Jigawa",
+  "Kaduna",
+  "Kano",
+  "Katsina",
+  "Kebbi",
+  "Kogi",
+  "Kwara",
+  "Lagos",
+  "Nasarawa",
+  "Niger",
+  "Ogun",
+  "Ondo",
+  "Osun",
+  "Oyo",
+  "Plateau",
+  "Rivers",
+  "Sokoto",
+  "Taraba",
+  "Yobe",
+  "Zamfara",
+] as const;
+
+// Property type display labels
+export const PROPERTY_TYPE_LABELS: Record<string, string> = {
+  APARTMENT: "Apartment / Flat",
+  SELF_CONTAIN: "Self Contain",
+  MINI_FLAT: "Mini Flat",
+  DUPLEX: "Duplex",
+  BUNGALOW: "Bungalow",
+  TERRACED: "Terraced House",
+  DETACHED: "Detached House",
+  SEMI_DETACHED: "Semi-Detached",
+  PENTHOUSE: "Penthouse",
+  STUDIO: "Studio Apartment",
+  OFFICE: "Office Space",
+  LAND: "Land",
+  WAREHOUSE: "Warehouse",
+  SHOP: "Shop / Commercial",
+};
+
+// Common Nigerian property features for the checkbox list
+export const COMMON_FEATURES = [
+  "24hr Power Supply",
+  "Running Water",
+  "Security",
+  "CCTV",
+  "Fully Furnished",
+  "Semi Furnished",
+  "Air Conditioning",
+  "Parking Space",
+  "Generator",
+  "Prepaid Meter",
+  "Swimming Pool",
+  "Gym",
+  "Elevator",
+  "POP Ceiling",
+  "Boys Quarter",
+  "Serviced",
+  "Gated Estate",
+  "Internet / WiFi",
+  "Borehole",
+  "Rooftop Terrace",
+];
