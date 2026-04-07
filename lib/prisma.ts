@@ -1,5 +1,6 @@
 import "server-only";
 import fs from "node:fs";
+import path from "node:path";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
@@ -18,9 +19,22 @@ let ssl: { rejectUnauthorized: boolean; ca?: string } | undefined;
 
 if (sslCertPath) {
   try {
+    const certPaths = sslCertPath
+      .split(";")
+      .flatMap((entry) => entry.split(","))
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+
+    const caBundle = certPaths
+      .map((entry) =>
+        path.isAbsolute(entry) ? entry : path.resolve(process.cwd(), entry),
+      )
+      .map((entry) => fs.readFileSync(entry, "utf8"))
+      .join("\n");
+
     ssl = {
       rejectUnauthorized: true,
-      ca: fs.readFileSync(sslCertPath, "utf8"),
+      ca: caBundle,
     };
   } catch (error) {
     console.error(
