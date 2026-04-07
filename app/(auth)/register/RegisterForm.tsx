@@ -63,7 +63,6 @@ export default function RegisterForm() {
         </div>
       )}
 
-      {/* Role selector */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-gray-700">I am a...</label>
         <div className="grid grid-cols-2 gap-3">
@@ -82,7 +81,7 @@ export default function RegisterForm() {
                 {...register("role")}
                 className="sr-only"
               />
-              {role === "USER" ? "🏠 Property Seeker" : "🏢 Property Agent"}
+              {role === "USER" ? "Property Seeker" : "Property Agent"}
             </label>
           ))}
         </div>
@@ -91,7 +90,6 @@ export default function RegisterForm() {
         )}
       </div>
 
-      {/* Name */}
       <div className="space-y-1.5">
         <label className="text-sm font-medium text-gray-700">Full name</label>
         <input
@@ -105,7 +103,6 @@ export default function RegisterForm() {
         )}
       </div>
 
-      {/* Email */}
       <div className="space-y-1.5">
         <label className="text-sm font-medium text-gray-700">
           Email address
@@ -121,7 +118,6 @@ export default function RegisterForm() {
         )}
       </div>
 
-      {/* Password */}
       <div className="space-y-1.5">
         <label className="text-sm font-medium text-gray-700">Password</label>
         <div className="relative">
@@ -144,14 +140,13 @@ export default function RegisterForm() {
         )}
       </div>
 
-      {/* Confirm password */}
       <div className="space-y-1.5">
         <label className="text-sm font-medium text-gray-700">
           Confirm password
         </label>
         <input
           type="password"
-          placeholder="••••••••"
+          placeholder="********"
           {...register("confirmPassword")}
           className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50 transition-colors"
         />
@@ -162,7 +157,6 @@ export default function RegisterForm() {
         )}
       </div>
 
-      {/* Submit */}
       <button
         type="submit"
         disabled={isSubmitting}
