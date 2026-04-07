@@ -7,8 +7,9 @@
 
 ## 2) Supabase Postgres + Pooler
 1. Create a Supabase project and get the connection pooler URL.
-2. Set `DATABASE_URL` to the pooler connection string with SSL enabled.
-3. Run Prisma migrations or `npx prisma db push` locally against the same URL.
+2. Set `DATABASE_URL` to the pooler connection string with `sslmode=verify-full`.
+3. (Optional) If your environment injects a custom TLS root, set `PG_SSL_CERT_PATH` to the CA file.
+4. Run Prisma migrations or `npx prisma db push` locally against the same URL.
 
 ## 3) Cloudinary
 1. Create a Cloudinary account and add the cloud name, API key, and API secret.

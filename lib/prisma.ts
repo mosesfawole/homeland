@@ -1,4 +1,5 @@
 import "server-only";
+import fs from "node:fs";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
@@ -8,10 +9,34 @@ const globalForPrisma = globalThis as typeof globalThis & {
   pgPool?: Pool;
 };
 
+const sslCertPath = process.env.PG_SSL_CERT_PATH;
+const allowSelfSigned =
+  process.env.PG_SSL_NO_VERIFY === "true" &&
+  process.env.NODE_ENV !== "production";
+
+let ssl: { rejectUnauthorized: boolean; ca?: string } | undefined;
+
+if (sslCertPath) {
+  try {
+    ssl = {
+      rejectUnauthorized: true,
+      ca: fs.readFileSync(sslCertPath, "utf8"),
+    };
+  } catch (error) {
+    console.error(
+      `[Prisma] Unable to read PG_SSL_CERT_PATH at ${sslCertPath}`,
+      error,
+    );
+  }
+} else if (allowSelfSigned) {
+  ssl = { rejectUnauthorized: false };
+}
+
 const pgPool =
   globalForPrisma.pgPool ??
   new Pool({
     connectionString: process.env.DATABASE_URL,
+    ssl,
   });
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.pgPool = pgPool;
