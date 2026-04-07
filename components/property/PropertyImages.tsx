@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { UploadCloud, X, Star } from "lucide-react";
 
@@ -11,11 +11,19 @@ export interface PropertyImageInput {
   order?: number;
 }
 
-interface Props {
+type UploadProps = {
+  mode?: "upload";
   value: PropertyImageInput[];
   onChange: (images: PropertyImageInput[]) => void;
   maxImages?: number;
-}
+};
+
+type GalleryProps = {
+  mode: "gallery";
+  value: PropertyImageInput[];
+};
+
+type Props = UploadProps | GalleryProps;
 
 interface CloudinarySignature {
   signature: string;
@@ -30,6 +38,7 @@ const MAX_FILE_SIZE_MB = 8;
 
 export default function PropertyImages({
   value,
+  mode = "upload",
   onChange,
   maxImages = DEFAULT_MAX_IMAGES,
 }: Props) {
@@ -37,6 +46,16 @@ export default function PropertyImages({
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const primaryIndex = Math.max(
+    0,
+    value.findIndex((img) => img.isPrimary),
+  );
+  const [activeIndex, setActiveIndex] = useState(primaryIndex);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+
+  useEffect(() => {
+    setActiveIndex(primaryIndex);
+  }, [primaryIndex]);
 
   const normalize = (images: PropertyImageInput[]) => {
     const normalized = images.map((img, index) => ({
@@ -91,6 +110,7 @@ export default function PropertyImages({
   };
 
   const handleFiles = async (files: FileList | File[]) => {
+    if (mode !== "upload" || !onChange) return;
     setError(null);
     const fileArray = Array.from(files);
 
@@ -138,11 +158,13 @@ export default function PropertyImages({
   };
 
   const removeImage = (index: number) => {
+    if (mode !== "upload" || !onChange) return;
     const next = value.filter((_, i) => i !== index);
     onChange(normalize(next));
   };
 
   const moveImage = (from: number, to: number) => {
+    if (mode !== "upload" || !onChange) return;
     if (to < 0 || to >= value.length) return;
     const next = [...value];
     const [moved] = next.splice(from, 1);
@@ -151,12 +173,95 @@ export default function PropertyImages({
   };
 
   const setPrimary = (index: number) => {
+    if (mode !== "upload" || !onChange) return;
     const next = value.map((img, i) => ({
       ...img,
       isPrimary: i === index,
     }));
     onChange(normalize(next));
   };
+
+  if (mode === "gallery") {
+    const current = value[activeIndex];
+
+    return (
+      <div className="space-y-4">
+        <button
+          type="button"
+          className="relative w-full aspect-[4/3] rounded-xl overflow-hidden border border-gray-200 bg-gray-100"
+          onClick={() => setLightboxOpen(true)}
+        >
+          {current ? (
+            <Image
+              src={current.url}
+              alt="Property image"
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, 60vw"
+            />
+          ) : (
+            <div className="h-full w-full flex items-center justify-center text-sm text-gray-400">
+              No images
+            </div>
+          )}
+        </button>
+
+        {value.length > 1 && (
+          <div className="grid grid-cols-4 sm:grid-cols-6 gap-3">
+            {value.map((image, index) => (
+              <button
+                key={image.publicId}
+                type="button"
+                onClick={() => setActiveIndex(index)}
+                className={`relative aspect-[4/3] rounded-lg overflow-hidden border ${
+                  index === activeIndex
+                    ? "border-blue-500"
+                    : "border-gray-200"
+                }`}
+              >
+                <Image
+                  src={image.url}
+                  alt={`Thumbnail ${index + 1}`}
+                  fill
+                  className="object-cover"
+                  sizes="120px"
+                />
+              </button>
+            ))}
+          </div>
+        )}
+
+        {lightboxOpen && current && (
+          <div
+            className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
+            onClick={() => setLightboxOpen(false)}
+            role="dialog"
+            aria-modal="true"
+          >
+            <div
+              className="relative w-full max-w-4xl aspect-[4/3] bg-black"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <Image
+                src={current.url}
+                alt="Expanded property image"
+                fill
+                className="object-contain"
+                sizes="100vw"
+              />
+              <button
+                type="button"
+                onClick={() => setLightboxOpen(false)}
+                className="absolute top-4 right-4 text-white text-sm bg-black/50 px-3 py-1 rounded-full"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">

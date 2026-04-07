@@ -48,7 +48,7 @@ export default function PropertyCard({ property }: Props) {
 
   return (
     <Link
-      href={`/properties/${property.id}`}
+      href={`/property/${property.id}`}
       className="group block rounded-xl overflow-hidden border border-gray-100 bg-white hover:shadow-lg transition-shadow"
     >
       <div className="relative aspect-[4/3] bg-gray-100">
