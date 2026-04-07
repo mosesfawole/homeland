@@ -1,8 +1,10 @@
-﻿import { headers } from "next/headers";
+import Link from "next/link";
+import { headers } from "next/headers";
 import PropertyCard, {
   type PropertyCardData,
 } from "@/components/property/PropertyCard";
 import PropertyFilters from "@/components/property/PropertyFilters";
+import SearchStoreSync from "@/components/layout/SearchStoreSync";
 
 interface SearchPageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -54,6 +56,15 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
+      <SearchStoreSync
+        query={query}
+        listingType={listingType}
+        propertyType={propertyType}
+        state={state}
+        minPrice={minPrice}
+        maxPrice={maxPrice}
+        bedrooms={bedrooms}
+      />
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Find Properties</h1>
         <p className="text-sm text-gray-500 mt-1">
