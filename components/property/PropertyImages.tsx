@@ -51,7 +51,7 @@ export default function PropertyImages({
   };
 
   const requestSignature = async (): Promise<CloudinarySignature> => {
-    const res = await fetch("/api/uploads/cloudinary", {
+    const res = await fetch("/api/upload", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ folder: "homeland/properties" }),
@@ -142,6 +142,14 @@ export default function PropertyImages({
     onChange(normalize(next));
   };
 
+  const moveImage = (from: number, to: number) => {
+    if (to < 0 || to >= value.length) return;
+    const next = [...value];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    onChange(normalize(next));
+  };
+
   const setPrimary = (index: number) => {
     const next = value.map((img, i) => ({
       ...img,
@@ -225,18 +233,40 @@ export default function PropertyImages({
               </div>
 
               <div className="flex items-center justify-between px-2 py-2 bg-white">
-                <button
-                  type="button"
-                  onClick={() => setPrimary(index)}
-                  className={`inline-flex items-center gap-1 text-xs font-medium ${
-                    image.isPrimary
-                      ? "text-yellow-600"
-                      : "text-gray-500 hover:text-gray-700"
-                  }`}
-                >
-                  <Star size={12} />
-                  {image.isPrimary ? "Primary" : "Set primary"}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPrimary(index)}
+                    className={`inline-flex items-center gap-1 text-xs font-medium ${
+                      image.isPrimary
+                        ? "text-yellow-600"
+                        : "text-gray-500 hover:text-gray-700"
+                    }`}
+                  >
+                    <Star size={12} />
+                    {image.isPrimary ? "Primary" : "Set primary"}
+                  </button>
+                  <div className="flex items-center gap-1 text-xs text-gray-400">
+                    <button
+                      type="button"
+                      onClick={() => moveImage(index, index - 1)}
+                      className="hover:text-gray-600"
+                      aria-label="Move left"
+                      disabled={index === 0}
+                    >
+                      {"<"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => moveImage(index, index + 1)}
+                      className="hover:text-gray-600"
+                      aria-label="Move right"
+                      disabled={index === value.length - 1}
+                    >
+                      {">"}
+                    </button>
+                  </div>
+                </div>
                 <button
                   type="button"
                   onClick={() => removeImage(index)}
