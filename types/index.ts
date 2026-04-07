@@ -1,6 +1,6 @@
-import type { DefaultSession } from "next-auth";
+﻿import type { DefaultSession } from "next-auth";
 
-// ── NextAuth type extension ───────────────────────────────────────
+// NextAuth type extension
 declare module "next-auth" {
   interface Session {
     user: {
@@ -12,26 +12,14 @@ declare module "next-auth" {
   }
 }
 
-// ── Property AI parse output ──────────────────────────────────────
-export interface ParsedProperty {
-  title: string;
-  propertyType: string;
-  bedrooms: number | null;
-  bathrooms: number | null;
-  location: string;
-  price: number;
-  rentDuration: "year" | "month" | null;
-  features: string[];
-}
-
-// ── API response wrapper ──────────────────────────────────────────
+// API response wrapper
 export interface ApiResponse<T = unknown> {
   data?: T;
   error?: string;
   message?: string;
 }
 
-// ── Property filters (search page) ───────────────────────────────
+// Property filters (search page)
 export interface PropertyFilters {
   query?: string;
   city?: string;
@@ -44,6 +32,15 @@ export interface PropertyFilters {
   page?: number;
   limit?: number;
 }
+
+export interface PropertyImageInput {
+  url: string;
+  publicId: string;
+  isPrimary?: boolean;
+  order?: number;
+}
+
+// Property AI parse output
 export interface ParsedProperty {
   title: string;
   propertyType: string;
@@ -58,3 +55,4 @@ export interface ParsedProperty {
   rentDuration: "year" | "month" | null;
   features: string[];
 }
+

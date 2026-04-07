@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { propertySchema } from "@/lib/validations/property";
+import { propertySchema, type PropertyFormInput } from "@/lib/validations/property";
+import { PropertyStatus, VerificationStatus } from "@prisma/client";
+import type { PropertyImageInput } from "@/types";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -70,8 +72,9 @@ export async function GET(req: NextRequest, { params }: Params) {
       .catch(() => {});
 
     return NextResponse.json({ data: property });
-  } catch (err: any) {
-    console.error("[GET /api/properties/[id]]", err.message);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[GET /api/properties/[id]]", message);
     return NextResponse.json(
       { error: "Failed to fetch property" },
       { status: 500 },
@@ -114,19 +117,30 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
     // Admin can update status directly (approve/reject)
     // Agents can only update content fields
-    let updateData: Record<string, any> = {};
+    type AdminUpdateFields = {
+      status?: PropertyStatus;
+      verificationStatus?: VerificationStatus;
+      verifiedAt?: Date | null;
+      verifiedBy?: string | null;
+      rejectionReason?: string | null;
+      isFeatured?: boolean;
+    };
+    let updateData: Partial<PropertyFormInput> & AdminUpdateFields = {};
 
-    if (isAdmin && body.status) {
+    const isPropertyStatus = (value: string): value is PropertyStatus =>
+      (Object.values(PropertyStatus) as string[]).includes(value);
+
+    if (isAdmin && typeof body.status === "string" && isPropertyStatus(body.status)) {
       updateData.status = body.status;
       if (body.status === "ACTIVE") {
         updateData.verificationStatus = "VERIFIED";
         updateData.verifiedAt = new Date();
         updateData.verifiedBy = session.user.id;
       }
-      if (body.status === "REJECTED" && body.rejectionReason) {
+      if (body.status === "REJECTED" && typeof body.rejectionReason === "string") {
         updateData.rejectionReason = body.rejectionReason;
       }
-      if (body.isFeatured !== undefined) {
+      if (typeof body.isFeatured === "boolean") {
         updateData.isFeatured = body.isFeatured;
       }
     } else {
@@ -146,14 +160,40 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       }
     }
 
+    let nextImages: PropertyImageInput[] | undefined;
+    if (updateData.images) {
+      nextImages = updateData.images;
+      const { images, ...rest } = updateData;
+      updateData = rest;
+    }
+    if (nextImages) {
+      delete (updateData as any).images;
+    }
+
     const updated = await prisma.property.update({
       where: { id },
-      data: updateData,
+      data: {
+        ...updateData,
+        ...(nextImages
+          ? {
+              images: {
+                deleteMany: {},
+                create: nextImages.map((image, index) => ({
+                  url: image.url,
+                  publicId: image.publicId,
+                  isPrimary: image.isPrimary ?? index === 0,
+                  order: image.order ?? index,
+                })),
+              },
+            }
+          : {}),
+      },
     });
 
     return NextResponse.json({ data: updated });
-  } catch (err: any) {
-    console.error("[PATCH /api/properties/[id]]", err.message);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[PATCH /api/properties/[id]]", message);
     return NextResponse.json(
       { error: "Failed to update property" },
       { status: 500 },
@@ -204,8 +244,9 @@ export async function DELETE(req: NextRequest, { params }: Params) {
     }
 
     return NextResponse.json({ message: "Listing deleted successfully" });
-  } catch (err: any) {
-    console.error("[DELETE /api/properties/[id]]", err.message);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[DELETE /api/properties/[id]]", message);
     return NextResponse.json(
       { error: "Failed to delete property" },
       { status: 500 },

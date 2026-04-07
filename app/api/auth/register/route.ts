@@ -48,8 +48,9 @@ export async function POST(req: NextRequest) {
       { message: "Account created successfully", userId: user.id },
       { status: 201 },
     );
-  } catch (err: any) {
-    console.error("[POST /api/auth/register]", err.message);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[POST /api/auth/register]", message);
     return NextResponse.json(
       { error: "Registration failed. Please try again." },
       { status: 500 },

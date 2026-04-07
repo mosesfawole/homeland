@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
@@ -12,6 +12,7 @@ import {
   COMMON_FEATURES,
 } from "@/lib/validations/property";
 import AIDescriptionParser from "@/components/property/AIDescriptionParser";
+import PropertyImages from "@/components/property/PropertyImages";
 
 interface Props {
   defaultValues?: Partial<PropertyFormInput>;
@@ -38,6 +39,7 @@ export default function PropertyForm({
     resolver: zodResolver(propertySchema),
     defaultValues: {
       features: [],
+      images: [],
       listingType: "RENT",
       bedrooms: 1,
       aiParsed: false,
@@ -45,8 +47,12 @@ export default function PropertyForm({
     },
   });
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const listingType = watch("listingType");
+  // eslint-disable-next-line react-hooks/incompatible-library
   const selectedFeatures = watch("features") ?? [];
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const images = watch("images") ?? [];
 
   const toggleFeature = (feature: string) => {
     const current = selectedFeatures;
@@ -102,17 +108,17 @@ export default function PropertyForm({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-      {/* ── AI Parser ──────────────────────────────────────────── */}
+      {/* â”€â”€ AI Parser â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <AIDescriptionParser setValue={setValue} />
 
-      {/* ── Server error ───────────────────────────────────────── */}
+      {/* â”€â”€ Server error â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {serverError && (
         <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">
           {serverError}
         </div>
       )}
 
-      {/* ── Section: Basic Info ────────────────────────────────── */}
+      {/* â”€â”€ Section: Basic Info â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <section className="bg-white rounded-xl border border-gray-100 p-6 space-y-5">
         <h2 className="text-base font-semibold text-gray-900">
           Basic Information
@@ -186,7 +192,21 @@ export default function PropertyForm({
         </div>
       </section>
 
-      {/* ── Section: Property Details ──────────────────────────── */}
+      {/* â”€â”€ Section: Images â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      <section className="bg-white rounded-xl border border-gray-100 p-6 space-y-5">
+        <h2 className="text-base font-semibold text-gray-900">Images</h2>
+        <PropertyImages
+          value={images}
+          onChange={(next) =>
+            setValue("images", next, { shouldDirty: true, shouldValidate: true })
+          }
+        />
+        {errors.images && (
+          <p className={errorClass}>{errors.images.message as string}</p>
+        )}
+      </section>
+
+      {/* â”€â”€ Section: Property Details â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <section className="bg-white rounded-xl border border-gray-100 p-6 space-y-5">
         <h2 className="text-base font-semibold text-gray-900">
           Property Details
@@ -228,7 +248,7 @@ export default function PropertyForm({
         {/* Price + Rent Duration */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className={labelClass}>Price (₦) *</label>
+            <label className={labelClass}>Price (â‚¦) *</label>
             <input
               type="number"
               min={0}
@@ -253,7 +273,7 @@ export default function PropertyForm({
         </div>
       </section>
 
-      {/* ── Section: Location ──────────────────────────────────── */}
+      {/* â”€â”€ Section: Location â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <section className="bg-white rounded-xl border border-gray-100 p-6 space-y-5">
         <h2 className="text-base font-semibold text-gray-900">Location</h2>
 
@@ -304,7 +324,7 @@ export default function PropertyForm({
         </div>
       </section>
 
-      {/* ── Section: Features ──────────────────────────────────── */}
+      {/* â”€â”€ Section: Features â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <section className="bg-white rounded-xl border border-gray-100 p-6 space-y-5">
         <h2 className="text-base font-semibold text-gray-900">
           Features & Amenities
@@ -378,7 +398,7 @@ export default function PropertyForm({
         )}
       </section>
 
-      {/* ── Submit ─────────────────────────────────────────────── */}
+      {/* â”€â”€ Submit â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <div className="flex items-center gap-3 pb-8">
         <button
           type="submit"
@@ -403,3 +423,4 @@ export default function PropertyForm({
     </form>
   );
 }
+

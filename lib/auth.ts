@@ -65,10 +65,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     // Attach custom fields to the JWT token
     async jwt({ token, user }) {
       if (user) {
+        type JwtUser = {
+          id: string;
+          role?: "USER" | "AGENT" | "ADMIN";
+          agentProfileId?: string | null;
+          agentVerified?: boolean;
+        };
+
+        const jwtUser = user as JwtUser;
         token.id = user.id;
-        token.role = (user as any).role;
-        token.agentProfileId = (user as any).agentProfileId;
-        token.agentVerified = (user as any).agentVerified;
+        if (jwtUser.role) token.role = jwtUser.role;
+        if (jwtUser.agentProfileId !== undefined)
+          token.agentProfileId = jwtUser.agentProfileId;
+        if (jwtUser.agentVerified !== undefined)
+          token.agentVerified = jwtUser.agentVerified;
       }
       return token;
     },

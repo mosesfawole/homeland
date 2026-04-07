@@ -167,8 +167,8 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ data: result });
-  } catch (err: any) {
-    const message = err?.message ?? String(err);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
     console.error("[POST /api/ai/parse-property]", message);
 
     if (err instanceof SyntaxError) {

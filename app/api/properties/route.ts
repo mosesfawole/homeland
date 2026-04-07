@@ -1,4 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  ListingType,
+  PropertyStatus,
+  PropertyType,
+  RentDuration,
+} from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { propertySchema } from "@/lib/validations/property";
@@ -77,8 +83,9 @@ export async function GET(req: NextRequest) {
         hasMore: skip + limit < total,
       },
     });
-  } catch (err: any) {
-    console.error("[GET /api/properties]", err.message);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[GET /api/properties]", message);
     return NextResponse.json(
       { error: "Failed to fetch properties" },
       { status: 500 },
@@ -92,7 +99,7 @@ export async function POST(req: NextRequest) {
   try {
     const session = await auth();
 
-    if (!session || session.user.role !== "AGENT") {
+    if (session?.user?.role !== "AGENT") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -131,6 +138,7 @@ export async function POST(req: NextRequest) {
       price,
       rentDuration,
       features,
+      images,
       address,
       city,
       state,
@@ -140,7 +148,7 @@ export async function POST(req: NextRequest) {
     } = parsed.data;
 
     // Verified agents go straight to ACTIVE, others go to PENDING_REVIEW
-    const status =
+    const status: PropertyStatus =
       agentProfile.verificationStatus === "VERIFIED"
         ? "ACTIVE"
         : "PENDING_REVIEW";
@@ -149,13 +157,15 @@ export async function POST(req: NextRequest) {
       data: {
         title,
         description,
-        propertyType: propertyType as any,
-        listingType: listingType as any,
+        propertyType: propertyType as PropertyType,
+        listingType: listingType as ListingType,
         bedrooms,
         bathrooms,
         toilets,
         price,
-        rentDuration: rentDuration as any,
+        rentDuration: rentDuration
+          ? (rentDuration as RentDuration)
+          : null,
         features: features ?? [],
         address,
         city,
@@ -163,8 +173,16 @@ export async function POST(req: NextRequest) {
         neighborhood,
         aiParsed: aiParsed ?? false,
         aiRawInput,
-        status: status as any,
+        status,
         agentProfileId: agentProfile.id,
+        images: {
+          create: (images ?? []).map((image, index) => ({
+            url: image.url,
+            publicId: image.publicId,
+            isPrimary: image.isPrimary ?? index === 0,
+            order: image.order ?? index,
+          })),
+        },
       },
     });
 
@@ -184,8 +202,9 @@ export async function POST(req: NextRequest) {
       },
       { status: 201 },
     );
-  } catch (err: any) {
-    console.error("[POST /api/properties]", err.message);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[POST /api/properties]", message);
     return NextResponse.json(
       { error: "Failed to create listing" },
       { status: 500 },

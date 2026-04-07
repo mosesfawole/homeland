@@ -27,6 +27,16 @@ export const propertySchema = z.object({
   price: z.number().positive("Price must be greater than 0"),
   rentDuration: z.enum(["MONTH", "YEAR"]).nullable().optional(),
   features: z.array(z.string()).default([]),
+  images: z
+    .array(
+      z.object({
+        url: z.string().url(),
+        publicId: z.string().min(1),
+        isPrimary: z.boolean().optional(),
+        order: z.number().int().optional(),
+      }),
+    )
+    .min(1, "At least one image is required"),
 
   // Location
   address: z.string().min(5, "Address is required"),
