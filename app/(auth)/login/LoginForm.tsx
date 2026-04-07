@@ -35,7 +35,6 @@ export default function LoginForm() {
         return;
       }
 
-      // Fetch session to get role for redirect
       const res = await fetch("/api/auth/session");
       const session = await res.json();
       const role = session?.user?.role;
@@ -59,14 +58,12 @@ export default function LoginForm() {
       onSubmit={handleSubmit(onSubmit)}
       className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 space-y-5"
     >
-      {/* Auth error */}
       {authError && (
         <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">
           {authError}
         </div>
       )}
 
-      {/* Email */}
       <div className="space-y-1.5">
         <label className="text-sm font-medium text-gray-700">
           Email address
@@ -82,13 +79,12 @@ export default function LoginForm() {
         )}
       </div>
 
-      {/* Password */}
       <div className="space-y-1.5">
         <label className="text-sm font-medium text-gray-700">Password</label>
         <div className="relative">
           <input
             type={showPass ? "text" : "password"}
-            placeholder="••••••••"
+            placeholder="********"
             {...register("password")}
             className="w-full px-4 py-2.5 pr-10 rounded-lg border border-gray-200 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50 transition-colors"
           />
@@ -105,7 +101,6 @@ export default function LoginForm() {
         )}
       </div>
 
-      {/* Submit */}
       <button
         type="submit"
         disabled={isSubmitting}

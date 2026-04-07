@@ -1,7 +1,7 @@
 import RegisterForm from "./RegisterForm";
 
 export const metadata = {
-  title: "Create Account — Homeland",
+  title: "Create Account - Homeland",
 };
 
 export default function RegisterPage() {

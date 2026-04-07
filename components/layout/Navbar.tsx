@@ -33,8 +33,14 @@ const buildNavLinks = (role?: string) => {
 };
 
 export default async function Navbar() {
-  const session = await auth();
-  const role = session?.user.role;
+  let session: Awaited<ReturnType<typeof auth>> = null;
+  try {
+    session = await auth();
+  } catch (error) {
+    console.error("[Navbar] Failed to load session", error);
+  }
+
+  const role = session?.user?.role;
   const navLinks = buildNavLinks(role);
 
   const dashboardHref =

@@ -11,31 +11,41 @@ export const metadata = {
 };
 
 export default async function LandingPage() {
-  const [featured, totalListings, verifiedAgents] = await Promise.all([
-    prisma.property.findMany({
-      where: {
-        isFeatured: true,
-        status: "ACTIVE",
-        verificationStatus: "VERIFIED",
-      },
-      take: 6,
-      orderBy: { createdAt: "desc" },
-      include: {
-        images: { orderBy: { order: "asc" }, select: { url: true } },
-        agentProfile: {
-          select: {
-            agencyName: true,
-            verificationStatus: true,
-            user: { select: { name: true, avatar: true } },
+  let featuredCards: PropertyCardData[] = [];
+  let totalListings = 0;
+  let verifiedAgents = 0;
+
+  try {
+    const [featured, total, agents] = await Promise.all([
+      prisma.property.findMany({
+        where: {
+          isFeatured: true,
+          status: "ACTIVE",
+          verificationStatus: "VERIFIED",
+        },
+        take: 6,
+        orderBy: { createdAt: "desc" },
+        include: {
+          images: { orderBy: { order: "asc" }, select: { url: true } },
+          agentProfile: {
+            select: {
+              agencyName: true,
+              verificationStatus: true,
+              user: { select: { name: true, avatar: true } },
+            },
           },
         },
-      },
-    }),
-    prisma.property.count({ where: { status: "ACTIVE" } }),
-    prisma.agentProfile.count({ where: { verificationStatus: "VERIFIED" } }),
-  ]);
+      }),
+      prisma.property.count({ where: { status: "ACTIVE" } }),
+      prisma.agentProfile.count({ where: { verificationStatus: "VERIFIED" } }),
+    ]);
 
-  const featuredCards = featured as unknown as PropertyCardData[];
+    featuredCards = featured as unknown as PropertyCardData[];
+    totalListings = total;
+    verifiedAgents = agents;
+  } catch (error) {
+    console.error("[LandingPage] Failed to load featured listings", error);
+  }
 
   return (
     <div>
