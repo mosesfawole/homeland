@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { formatSupabaseError, getSupabaseAdmin } from "@/lib/supabase-server";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -12,10 +12,16 @@ export async function POST(req: NextRequest, { params }: Params) {
     }
 
     const { id } = await params;
-    const property = await prisma.property.findUnique({
-      where: { id },
-      select: { id: true, status: true },
-    });
+    const supabase = getSupabaseAdmin();
+    const { data: property, error: propertyError } = await supabase
+      .from("Property")
+      .select("id, status")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (propertyError) {
+      console.error("[POST /api/properties/[id]/favorite] Property lookup failed", formatSupabaseError(propertyError));
+    }
 
     if (!property || property.status !== "ACTIVE") {
       return NextResponse.json(
@@ -24,23 +30,33 @@ export async function POST(req: NextRequest, { params }: Params) {
       );
     }
 
-    const existing = await prisma.favorite.findUnique({
-      where: {
-        userId_propertyId: {
-          userId: session.user.id,
-          propertyId: id,
-        },
-      },
-    });
+    const { data: existing, error: existingError } = await supabase
+      .from("Favorite")
+      .select("id")
+      .eq("userId", session.user.id)
+      .eq("propertyId", id)
+      .maybeSingle();
+
+    if (existingError) {
+      console.error("[POST /api/properties/[id]/favorite] Favorite lookup failed", formatSupabaseError(existingError));
+    }
 
     if (existing) {
-      await prisma.favorite.delete({ where: { id: existing.id } });
+      await supabase.from("Favorite").delete().eq("id", existing.id);
       return NextResponse.json({ favorited: false });
     }
 
-    await prisma.favorite.create({
-      data: { userId: session.user.id, propertyId: id },
-    });
+    const { error: insertError } = await supabase
+      .from("Favorite")
+      .insert({ userId: session.user.id, propertyId: id });
+
+    if (insertError) {
+      console.error("[POST /api/properties/[id]/favorite] Favorite create failed", formatSupabaseError(insertError));
+      return NextResponse.json(
+        { error: "Failed to update favorite" },
+        { status: 500 },
+      );
+    }
 
     return NextResponse.json({ favorited: true });
   } catch (err: unknown) {

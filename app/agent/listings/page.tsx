@@ -1,9 +1,9 @@
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import ListingActions from "@/components/agent/ListingActions";
 import { formatPrice, timeAgo } from "@/lib/utils/format";
 import Link from "next/link";
+import { formatSupabaseError, getSupabaseAdmin } from "@/lib/supabase-server";
 
 export const metadata = {
   title: "Manage Listings - Homeland",
@@ -13,26 +13,30 @@ export default async function AgentListingsPage() {
   const session = await auth();
   if (!session || session.user.role !== "AGENT") redirect("/login");
 
-  const agentProfile = await prisma.agentProfile.findUnique({
-    where: { userId: session.user.id },
-    select: { id: true },
-  });
+  const supabase = getSupabaseAdmin();
+  const { data: agentProfile, error: agentError } = await supabase
+    .from("AgentProfile")
+    .select("id")
+    .eq("userId", session.user.id)
+    .maybeSingle();
+
+  if (agentError) {
+    console.error("[AgentListingsPage] Failed to load agent profile", formatSupabaseError(agentError));
+  }
 
   if (!agentProfile) redirect("/agent/verification");
 
-  const listings = await prisma.property.findMany({
-    where: { agentProfileId: agentProfile.id },
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      title: true,
-      status: true,
-      listingType: true,
-      price: true,
-      viewCount: true,
-      createdAt: true,
-    },
-  });
+  const { data: listings, error: listingsError } = await supabase
+    .from("Property")
+    .select("id, title, status, listingType, price, viewCount, createdAt")
+    .eq("agentProfileId", agentProfile.id)
+    .order("createdAt", { ascending: false });
+
+  if (listingsError) {
+    console.error("[AgentListingsPage] Failed to load listings", formatSupabaseError(listingsError));
+  }
+
+  const listingList = listings ?? [];
 
   return (
     <div className="space-y-6">
@@ -52,7 +56,7 @@ export default async function AgentListingsPage() {
       </div>
 
       <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
-        {listings.length === 0 ? (
+        {listingList.length === 0 ? (
           <div className="p-8 text-center text-sm text-gray-500">
             No listings yet.
           </div>
@@ -69,7 +73,7 @@ export default async function AgentListingsPage() {
               </tr>
             </thead>
             <tbody>
-              {listings.map((listing) => (
+              {listingList.map((listing) => (
                 <tr key={listing.id} className="border-t border-gray-100">
                   <td className="px-4 py-3">
                     <div className="font-medium text-gray-900">

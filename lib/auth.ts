@@ -1,9 +1,8 @@
 import NextAuth from "next-auth";
-import { PrismaAdapter } from "@auth/prisma-adapter";
 import Credentials from "next-auth/providers/credentials";
-import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { getSupabaseAdmin } from "@/lib/supabase-server";
 
 // Install: npm install bcryptjs @types/bcryptjs
 
@@ -13,7 +12,6 @@ const loginSchema = z.object({
 });
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
   secret: process.env.NEXTAUTH_SECRET,
 
@@ -36,15 +34,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!parsed.success) return null;
 
         const { email, password } = parsed.data;
+        const supabase = getSupabaseAdmin();
 
-        const user = await prisma.user.findUnique({
-          where: { email },
-          include: {
-            agentProfile: { select: { id: true, verificationStatus: true } },
-          },
-        });
+        const { data: user, error: userError } = await supabase
+          .from("User")
+          .select("id, email, name, role, password")
+          .eq("email", email)
+          .maybeSingle();
 
-        if (!user || !user.password) return null;
+        if (userError || !user || !user.password) return null;
+
+        const { data: agentProfile } = await supabase
+          .from("AgentProfile")
+          .select("id, verificationStatus")
+          .eq("userId", user.id)
+          .maybeSingle();
 
         const valid = await bcrypt.compare(password, user.password);
         if (!valid) return null;
@@ -54,8 +58,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           email: user.email,
           name: user.name,
           role: user.role,
-          agentProfileId: user.agentProfile?.id ?? null,
-          agentVerified: user.agentProfile?.verificationStatus === "VERIFIED",
+          agentProfileId: agentProfile?.id ?? null,
+          agentVerified: agentProfile?.verificationStatus === "VERIFIED",
         };
       },
     }),

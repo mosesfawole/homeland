@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import BookingCard from "@/components/booking/BookingCard";
+import { formatSupabaseError, getSupabaseAdmin } from "@/lib/supabase-server";
 
 export const metadata = {
   title: "Tour Requests - Homeland",
@@ -11,21 +11,52 @@ export default async function AgentBookingsPage() {
   const session = await auth();
   if (!session || session.user.role !== "AGENT") redirect("/login");
 
-  const agentProfile = await prisma.agentProfile.findUnique({
-    where: { userId: session.user.id },
-    select: { id: true },
-  });
+  const supabase = getSupabaseAdmin();
+  const { data: agentProfile, error: agentError } = await supabase
+    .from("AgentProfile")
+    .select("id")
+    .eq("userId", session.user.id)
+    .maybeSingle();
+
+  if (agentError) {
+    console.error("[AgentBookingsPage] Failed to load agent profile", formatSupabaseError(agentError));
+  }
 
   if (!agentProfile) redirect("/agent/verification");
 
-  const bookings = await prisma.booking.findMany({
-    where: { property: { agentProfileId: agentProfile.id } },
-    orderBy: { createdAt: "desc" },
-    include: {
-      property: { select: { id: true, title: true } },
-      user: { select: { name: true, email: true, phone: true } },
-    },
-  });
+  const { data: properties } = await supabase
+    .from("Property")
+    .select("id")
+    .eq("agentProfileId", agentProfile.id);
+
+  const propertyIds = (properties ?? []).map((row) => row.id);
+
+  const { data: bookings, error: bookingsError } = propertyIds.length
+    ? await supabase
+        .from("Booking")
+        .select(
+          `
+        id,
+        status,
+        tourDate,
+        tourTime,
+        message,
+        createdAt,
+        cancelReason,
+        agentNote,
+        property:Property(id, title),
+        user:User(name, email, phone)
+      `,
+        )
+        .in("propertyId", propertyIds)
+        .order("createdAt", { ascending: false })
+    : { data: [], error: null };
+
+  if (bookingsError) {
+    console.error("[AgentBookingsPage] Failed to load bookings", formatSupabaseError(bookingsError));
+  }
+
+  const bookingList = bookings ?? [];
 
   return (
     <div className="space-y-6">
@@ -36,13 +67,13 @@ export default async function AgentBookingsPage() {
         </p>
       </div>
 
-      {bookings.length === 0 ? (
+      {bookingList.length === 0 ? (
         <div className="bg-white border border-gray-100 rounded-xl p-8 text-center text-sm text-gray-500">
           No bookings yet.
         </div>
       ) : (
         <div className="grid gap-4">
-          {bookings.map((booking) => (
+          {bookingList.map((booking) => (
             <BookingCard key={booking.id} booking={booking} role="AGENT" />
           ))}
         </div>

@@ -1,8 +1,8 @@
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import AgentReviewActions from "@/components/admin/AgentReviewActions";
 import { timeAgo } from "@/lib/utils/format";
+import { formatSupabaseError, getSupabaseAdmin } from "@/lib/supabase-server";
 
 export const metadata = {
   title: "Agents - Homeland",
@@ -12,12 +12,26 @@ export default async function AdminAgentsPage() {
   const session = await auth();
   if (!session || session.user.role !== "ADMIN") redirect("/login");
 
-  const agents = await prisma.agentProfile.findMany({
-    orderBy: { createdAt: "desc" },
-    include: {
-      user: { select: { name: true, email: true } },
-    },
-  });
+  const supabase = getSupabaseAdmin();
+  const { data: agents, error } = await supabase
+    .from("AgentProfile")
+    .select(
+      `
+      id,
+      verificationStatus,
+      govIdUrl,
+      cacDocUrl,
+      createdAt,
+      user:User(name, email)
+    `,
+    )
+    .order("createdAt", { ascending: false });
+
+  if (error) {
+    console.error("[AdminAgentsPage] Failed to load agents", formatSupabaseError(error));
+  }
+
+  const agentList = agents ?? [];
 
   return (
     <div className="space-y-6">
@@ -29,7 +43,7 @@ export default async function AdminAgentsPage() {
       </div>
 
       <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
-        {agents.length === 0 ? (
+        {agentList.length === 0 ? (
           <div className="p-8 text-center text-sm text-gray-500">
             No agents found.
           </div>
@@ -45,14 +59,14 @@ export default async function AdminAgentsPage() {
               </tr>
             </thead>
             <tbody>
-              {agents.map((agent) => (
+              {agentList.map((agent) => (
                 <tr key={agent.id} className="border-t border-gray-100">
                   <td className="px-4 py-3">
                     <div className="text-gray-900 font-medium">
-                      {agent.user.name ?? "Agent"}
+                      {agent.user?.name ?? "Agent"}
                     </div>
                     <div className="text-xs text-gray-500">
-                      {agent.user.email}
+                      {agent.user?.email ?? "-"}
                     </div>
                   </td>
                   <td className="px-4 py-3">

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import {
   sendBookingCancelledEmail,
   sendBookingConfirmedEmail,
 } from "@/lib/email";
+import { formatSupabaseError, getSupabaseAdmin } from "@/lib/supabase-server";
 
 export const runtime = "nodejs";
 
@@ -36,25 +36,22 @@ export async function PATCH(req: NextRequest, { params }: RouteProps) {
       );
     }
 
-    const booking = await prisma.booking.findUnique({
-      where: { id },
-      include: {
-        property: {
-          select: {
-            id: true,
-            title: true,
-            agentProfileId: true,
-          },
-        },
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-      },
-    });
+    const supabase = getSupabaseAdmin();
+    const { data: booking, error: bookingError } = await supabase
+      .from("Booking")
+      .select(
+        `
+        *,
+        property:Property(id, title, agentProfileId),
+        user:User(id, name, email)
+      `,
+      )
+      .eq("id", id)
+      .single();
+
+    if (bookingError) {
+      console.error("[PATCH /api/bookings/:id] Booking lookup failed", formatSupabaseError(bookingError));
+    }
 
     if (!booking) {
       return NextResponse.json({ error: "Booking not found" }, { status: 404 });
@@ -125,10 +122,20 @@ export async function PATCH(req: NextRequest, { params }: RouteProps) {
       };
     }
 
-    const updated = await prisma.booking.update({
-      where: { id },
-      data: updateData,
-    });
+    const { data: updated, error: updateError } = await supabase
+      .from("Booking")
+      .update(updateData)
+      .eq("id", id)
+      .select("*")
+      .single();
+
+    if (updateError || !updated) {
+      console.error("[PATCH /api/bookings/:id] Booking update failed", formatSupabaseError(updateError ?? { message: "Booking not updated" }));
+      return NextResponse.json(
+        { error: "Failed to update booking" },
+        { status: 500 },
+      );
+    }
 
     const tourDate = new Date(booking.tourDate).toLocaleDateString("en-NG");
 

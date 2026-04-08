@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { prisma } from "@/lib/prisma";
 import PropertyCard, { type PropertyCardData } from "@/components/property/PropertyCard";
 import HeroSearch from "@/components/layout/HeroSearch";
 import { ShieldCheck, Sparkles, MapPin, CalendarCheck } from "lucide-react";
+import { formatSupabaseError, getSupabaseAdmin } from "@/lib/supabase-server";
 
 export const metadata = {
   title: "Homeland - Verified Nigerian Properties",
@@ -16,33 +16,73 @@ export default async function LandingPage() {
   let verifiedAgents = 0;
 
   try {
-    const [featured, total, agents] = await Promise.all([
-      prisma.property.findMany({
-        where: {
-          isFeatured: true,
-          status: "ACTIVE",
-          verificationStatus: "VERIFIED",
-        },
-        take: 6,
-        orderBy: { createdAt: "desc" },
-        include: {
-          images: { orderBy: { order: "asc" }, select: { url: true } },
-          agentProfile: {
-            select: {
-              agencyName: true,
-              verificationStatus: true,
-              user: { select: { name: true, avatar: true } },
-            },
-          },
-        },
-      }),
-      prisma.property.count({ where: { status: "ACTIVE" } }),
-      prisma.agentProfile.count({ where: { verificationStatus: "VERIFIED" } }),
+    const supabase = getSupabaseAdmin();
+
+    const [featuredResult, totalResult, agentsResult] = await Promise.all([
+      supabase
+        .from("Property")
+        .select(
+          `
+          id,
+          title,
+          propertyType,
+          listingType,
+          bedrooms,
+          bathrooms,
+          price,
+          rentDuration,
+          address,
+          city,
+          state,
+          neighborhood,
+          isFeatured,
+          createdAt,
+          verificationStatus,
+          images:PropertyImage(url, isPrimary, order),
+          agentProfile:AgentProfile(
+            agencyName,
+            verificationStatus,
+            user:User(name, avatar)
+          )
+        `,
+        )
+        .eq("isFeatured", true)
+        .eq("status", "ACTIVE")
+        .eq("verificationStatus", "VERIFIED")
+        .order("createdAt", { ascending: false })
+        .order("order", { ascending: true, foreignTable: "PropertyImage" })
+        .limit(6),
+      supabase
+        .from("Property")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "ACTIVE"),
+      supabase
+        .from("AgentProfile")
+        .select("id", { count: "exact", head: true })
+        .eq("verificationStatus", "VERIFIED"),
     ]);
 
-    featuredCards = featured as unknown as PropertyCardData[];
-    totalListings = total;
-    verifiedAgents = agents;
+    if (featuredResult.error) {
+      console.error(
+        "[LandingPage] Failed to load featured listings",
+        formatSupabaseError(featuredResult.error),
+      );
+    }
+
+    const featured = featuredResult.data ?? [];
+    featuredCards = featured.map((property) => {
+      const images = Array.isArray(property.images) ? property.images : [];
+      const primary =
+        images.find((img: { isPrimary?: boolean }) => img.isPrimary) ?? images[0];
+      return {
+        ...property,
+        images: primary ? [{ url: primary.url }] : [],
+      } as PropertyCardData;
+    });
+
+    totalListings = totalResult.count ?? 0;
+    verifiedAgents = agentsResult.count ?? 0;
+
   } catch (error) {
     console.error("[LandingPage] Failed to load featured listings", error);
   }

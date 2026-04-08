@@ -1,8 +1,8 @@
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { formatPrice, timeAgo } from "@/lib/utils/format";
 import PropertyReviewActions from "@/components/admin/PropertyReviewActions";
+import { formatSupabaseError, getSupabaseAdmin } from "@/lib/supabase-server";
 
 export const metadata = {
   title: "Properties - Homeland",
@@ -12,17 +12,31 @@ export default async function AdminPropertiesPage() {
   const session = await auth();
   if (!session || session.user.role !== "ADMIN") redirect("/login");
 
-  const properties = await prisma.property.findMany({
-    orderBy: { createdAt: "desc" },
-    include: {
-      agentProfile: {
-        select: {
-          agencyName: true,
-          user: { select: { name: true, email: true } },
-        },
-      },
-    },
-  });
+  const supabase = getSupabaseAdmin();
+  const { data: properties, error } = await supabase
+    .from("Property")
+    .select(
+      `
+      id,
+      title,
+      listingType,
+      status,
+      price,
+      createdAt,
+      isFeatured,
+      agentProfile:AgentProfile(
+        agencyName,
+        user:User(name, email)
+      )
+    `,
+    )
+    .order("createdAt", { ascending: false });
+
+  if (error) {
+    console.error("[AdminPropertiesPage] Failed to load properties", formatSupabaseError(error));
+  }
+
+  const propertyList = properties ?? [];
 
   return (
     <div className="space-y-6">
@@ -34,7 +48,7 @@ export default async function AdminPropertiesPage() {
       </div>
 
       <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
-        {properties.length === 0 ? (
+        {propertyList.length === 0 ? (
           <div className="p-8 text-center text-sm text-gray-500">
             No properties found.
           </div>
@@ -51,7 +65,7 @@ export default async function AdminPropertiesPage() {
               </tr>
             </thead>
             <tbody>
-              {properties.map((property) => (
+              {propertyList.map((property) => (
                 <tr key={property.id} className="border-t border-gray-100">
                   <td className="px-4 py-3">
                     <div className="text-gray-900 font-medium">

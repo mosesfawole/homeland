@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { formatSupabaseError, getSupabaseAdmin } from "@/lib/supabase-server";
 
 const verificationSchema = z.object({
   govIdUrl: z.string().url().optional(),
@@ -25,10 +25,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const agentProfile = await prisma.agentProfile.findUnique({
-      where: { userId: session.user.id },
-      select: { id: true, verificationStatus: true },
-    });
+    const supabase = getSupabaseAdmin();
+    const { data: agentProfile, error: agentError } = await supabase
+      .from("AgentProfile")
+      .select("id, verificationStatus")
+      .eq("userId", session.user.id)
+      .maybeSingle();
+
+    if (agentError) {
+      console.error("[POST /api/agent/verification] Agent lookup failed", formatSupabaseError(agentError));
+    }
 
     if (!agentProfile) {
       return NextResponse.json(
@@ -42,14 +48,24 @@ export async function POST(req: NextRequest) {
         ? "VERIFIED"
         : "PENDING";
 
-    const updated = await prisma.agentProfile.update({
-      where: { id: agentProfile.id },
-      data: {
-        govIdUrl: parsed.data.govIdUrl,
-        cacDocUrl: parsed.data.cacDocUrl,
+    const { data: updated, error: updateError } = await supabase
+      .from("AgentProfile")
+      .update({
+        govIdUrl: parsed.data.govIdUrl ?? null,
+        cacDocUrl: parsed.data.cacDocUrl ?? null,
         verificationStatus: nextStatus,
-      },
-    });
+      })
+      .eq("id", agentProfile.id)
+      .select("*")
+      .single();
+
+    if (updateError || !updated) {
+      console.error("[POST /api/agent/verification] Update failed", formatSupabaseError(updateError ?? { message: "Agent profile not updated" }));
+      return NextResponse.json(
+        { error: "Failed to submit verification documents" },
+        { status: 500 },
+      );
+    }
 
     return NextResponse.json({
       message: "Verification documents submitted",

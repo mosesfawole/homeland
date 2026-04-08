@@ -1,9 +1,9 @@
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import PropertyForm from "@/components/forms/PropertyForm";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { formatSupabaseError, getSupabaseAdmin } from "@/lib/supabase-server";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -18,10 +18,21 @@ export default async function EditListingPage({ params }: PageProps) {
   if (!session || session.user.role !== "AGENT") redirect("/login");
 
   const { id } = await params;
-  const property = await prisma.property.findUnique({
-    where: { id },
-    include: { images: true },
-  });
+  const supabase = getSupabaseAdmin();
+  const { data: property, error } = await supabase
+    .from("Property")
+    .select(
+      `
+      *,
+      images:PropertyImage(url, publicId, isPrimary, order)
+    `,
+    )
+    .eq("id", id)
+    .single();
+
+  if (error) {
+    console.error("[EditListingPage] Failed to load property", formatSupabaseError(error));
+  }
 
   if (!property) redirect("/agent/listings");
 
@@ -66,12 +77,14 @@ export default async function EditListingPage({ params }: PageProps) {
           city: property.city,
           state: property.state,
           neighborhood: property.neighborhood,
-          images: property.images.map((image) => ({
-            url: image.url,
-            publicId: image.publicId,
-            isPrimary: image.isPrimary,
-            order: image.order,
-          })),
+          images: (Array.isArray(property.images) ? property.images : []).map(
+            (image) => ({
+              url: image.url,
+              publicId: image.publicId,
+              isPrimary: image.isPrimary,
+              order: image.order,
+            }),
+          ),
         }}
       />
     </div>

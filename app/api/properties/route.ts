@@ -1,14 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  ListingType,
-  PropertyStatus,
-  PropertyType,
-  RentDuration,
-} from "@prisma/client";
-import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { propertySchema } from "@/lib/validations/property";
 import { parsePagination, buildPropertyFilters } from "@/lib/utils/helpers";
+import { LISTING_TYPES, PROPERTY_TYPES, type PropertyStatus } from "@/lib/db-types";
+import { formatSupabaseError, getSupabaseAdmin } from "@/lib/supabase-server";
 
 // ── GET /api/properties ──────────────────────────────────────────
 // Public — search and filter active listings
@@ -16,62 +11,111 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = req.nextUrl;
     const { page, limit, skip } = parsePagination(searchParams);
-    const where = buildPropertyFilters(searchParams);
+    const filters = buildPropertyFilters(searchParams);
+    const supabase = getSupabaseAdmin();
 
     // Sorting
     const sortBy = searchParams.get("sortBy") || "createdAt";
     const sortOrder = searchParams.get("sortOrder") || "desc";
-    const orderBy =
-      sortBy === "price"
-        ? { price: sortOrder as "asc" | "desc" }
-        : { createdAt: sortOrder as "asc" | "desc" };
 
-    const [properties, total] = await Promise.all([
-      prisma.property.findMany({
-        where,
-        orderBy: [
-          { isFeatured: "desc" }, // featured always first
-          orderBy,
-        ],
-        skip,
-        take: limit,
-        select: {
-          id: true,
-          title: true,
-          propertyType: true,
-          listingType: true,
-          bedrooms: true,
-          bathrooms: true,
-          price: true,
-          rentDuration: true,
-          address: true,
-          city: true,
-          state: true,
-          neighborhood: true,
-          isFeatured: true,
-          viewCount: true,
-          createdAt: true,
-          verificationStatus: true,
-          features: true,
-          images: {
-            where: { isPrimary: true },
-            take: 1,
-            select: { url: true },
-          },
-          agentProfile: {
-            select: {
-              id: true,
-              agencyName: true,
-              verificationStatus: true,
-              user: {
-                select: { name: true, avatar: true },
-              },
-            },
-          },
-        },
-      }),
-      prisma.property.count({ where }),
-    ]);
+    let query = supabase
+      .from("Property")
+      .select(
+        `
+        id,
+        title,
+        propertyType,
+        listingType,
+        bedrooms,
+        bathrooms,
+        price,
+        rentDuration,
+        address,
+        city,
+        state,
+        neighborhood,
+        isFeatured,
+        viewCount,
+        createdAt,
+        verificationStatus,
+        features,
+        images:PropertyImage(url, isPrimary, order),
+        agentProfile:AgentProfile(
+          id,
+          agencyName,
+          verificationStatus,
+          user:User(name, avatar)
+        )
+      `,
+        { count: "exact" },
+      )
+      .eq("status", "ACTIVE");
+
+    if (filters.query) {
+      const q = filters.query.replace(/%/g, "").trim();
+      if (q) {
+        query = query.or(
+          [
+            `title.ilike.%${q}%`,
+            `description.ilike.%${q}%`,
+            `address.ilike.%${q}%`,
+            `city.ilike.%${q}%`,
+            `state.ilike.%${q}%`,
+            `neighborhood.ilike.%${q}%`,
+          ].join(","),
+        );
+      }
+    }
+
+    if (filters.propertyType && PROPERTY_TYPES.includes(filters.propertyType)) {
+      query = query.eq("propertyType", filters.propertyType);
+    }
+
+    if (filters.listingType && LISTING_TYPES.includes(filters.listingType)) {
+      query = query.eq("listingType", filters.listingType);
+    }
+
+    if (filters.city) query = query.ilike("city", filters.city);
+    if (filters.state) query = query.ilike("state", filters.state);
+    if (Number.isFinite(filters.minPrice)) {
+      query = query.gte("price", filters.minPrice as number);
+    }
+    if (Number.isFinite(filters.maxPrice)) {
+      query = query.lte("price", filters.maxPrice as number);
+    }
+    if (Number.isFinite(filters.bedrooms)) {
+      query = query.gte("bedrooms", filters.bedrooms as number);
+    }
+
+    query = query
+      .order("isFeatured", { ascending: false })
+      .order(sortBy === "price" ? "price" : "createdAt", {
+        ascending: sortOrder === "asc",
+      })
+      .order("order", { ascending: true, foreignTable: "PropertyImage" })
+      .range(skip, skip + limit - 1);
+
+    const { data, error, count } = await query;
+
+    if (error) {
+      console.error("[GET /api/properties] Supabase error", formatSupabaseError(error));
+      return NextResponse.json(
+        { error: "Failed to fetch properties" },
+        { status: 500 },
+      );
+    }
+
+    const properties = (data ?? []).map((property) => {
+      const images = Array.isArray(property.images) ? property.images : [];
+      const primary =
+        images.find((img: { isPrimary?: boolean }) => img.isPrimary) ?? images[0];
+      return {
+        ...property,
+        images: primary ? [{ url: primary.url }] : [],
+      };
+    });
+
+    const total = count ?? 0;
 
     return NextResponse.json({
       data: properties,
@@ -116,11 +160,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const agentProfile = await prisma.agentProfile.findUnique({
-      where: { userId: session.user.id },
-    });
+    const supabase = getSupabaseAdmin();
 
-    if (!agentProfile) {
+    const { data: agentProfile, error: agentError } = await supabase
+      .from("AgentProfile")
+      .select("id, verificationStatus, totalListings")
+      .eq("userId", session.user.id)
+      .maybeSingle();
+
+    if (agentError || !agentProfile) {
       return NextResponse.json(
         { error: "Agent profile not found" },
         { status: 404 },
@@ -153,19 +201,18 @@ export async function POST(req: NextRequest) {
         ? "ACTIVE"
         : "PENDING_REVIEW";
 
-    const property = await prisma.property.create({
-      data: {
+    const { data: property, error: propertyError } = await supabase
+      .from("Property")
+      .insert({
         title,
         description,
-        propertyType: propertyType as PropertyType,
-        listingType: listingType as ListingType,
+        propertyType,
+        listingType,
         bedrooms,
         bathrooms,
         toilets,
         price,
-        rentDuration: rentDuration
-          ? (rentDuration as RentDuration)
-          : null,
+        rentDuration: rentDuration ?? null,
         features: features ?? [],
         address,
         city,
@@ -175,22 +222,47 @@ export async function POST(req: NextRequest) {
         aiRawInput,
         status,
         agentProfileId: agentProfile.id,
-        images: {
-          create: (images ?? []).map((image, index) => ({
-            url: image.url,
-            publicId: image.publicId,
-            isPrimary: image.isPrimary ?? index === 0,
-            order: image.order ?? index,
-          })),
-        },
-      },
-    });
+      })
+      .select("*")
+      .single();
+
+    if (propertyError || !property) {
+      console.error("[POST /api/properties] Property create failed", formatSupabaseError(propertyError ?? { message: "Property not created" }));
+      return NextResponse.json(
+        { error: "Failed to create listing" },
+        { status: 500 },
+      );
+    }
+
+    const imageRows = (images ?? []).map((image, index) => ({
+      propertyId: property.id,
+      url: image.url,
+      publicId: image.publicId,
+      isPrimary: image.isPrimary ?? index === 0,
+      order: image.order ?? index,
+    }));
+
+    if (imageRows.length > 0) {
+      const { error: imagesError } = await supabase
+        .from("PropertyImage")
+        .insert(imageRows);
+
+      if (imagesError) {
+        await supabase.from("Property").delete().eq("id", property.id);
+        console.error("[POST /api/properties] Image insert failed", formatSupabaseError(imagesError));
+        return NextResponse.json(
+          { error: "Failed to create listing images" },
+          { status: 500 },
+        );
+      }
+    }
 
     // Update agent listing count
-    await prisma.agentProfile.update({
-      where: { id: agentProfile.id },
-      data: { totalListings: { increment: 1 } },
-    });
+    const nextTotal = (agentProfile.totalListings ?? 0) + 1;
+    await supabase
+      .from("AgentProfile")
+      .update({ totalListings: nextTotal })
+      .eq("id", agentProfile.id);
 
     return NextResponse.json(
       {

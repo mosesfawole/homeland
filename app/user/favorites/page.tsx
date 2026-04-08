@@ -1,9 +1,9 @@
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import PropertyCard, {
   type PropertyCardData,
 } from "@/components/property/PropertyCard";
+import { formatSupabaseError, getSupabaseAdmin } from "@/lib/supabase-server";
 
 export const metadata = {
   title: "Saved Properties - Homeland",
@@ -13,41 +13,57 @@ export default async function UserFavoritesPage() {
   const session = await auth();
   if (!session || session.user.role !== "USER") redirect("/login");
 
-  const favorites = await prisma.favorite.findMany({
-    where: { userId: session.user.id },
-    orderBy: { createdAt: "desc" },
-    include: {
-      property: {
-        select: {
-          id: true,
-          title: true,
-          propertyType: true,
-          listingType: true,
-          bedrooms: true,
-          bathrooms: true,
-          price: true,
-          rentDuration: true,
-          address: true,
-          city: true,
-          state: true,
-          neighborhood: true,
-          isFeatured: true,
-          createdAt: true,
-          verificationStatus: true,
-          images: { where: { isPrimary: true }, take: 1, select: { url: true } },
-          agentProfile: {
-            select: {
-              agencyName: true,
-              verificationStatus: true,
-              user: { select: { name: true, avatar: true } },
-            },
-          },
-        },
-      },
-    },
-  });
+  const supabase = getSupabaseAdmin();
+  const { data: favorites, error } = await supabase
+    .from("Favorite")
+    .select(
+      `
+      createdAt,
+      property:Property(
+        id,
+        title,
+        propertyType,
+        listingType,
+        bedrooms,
+        bathrooms,
+        price,
+        rentDuration,
+        address,
+        city,
+        state,
+        neighborhood,
+        isFeatured,
+        createdAt,
+        verificationStatus,
+        images:PropertyImage(url, isPrimary, order),
+        agentProfile:AgentProfile(
+          agencyName,
+          verificationStatus,
+          user:User(name, avatar)
+        )
+      )
+    `,
+    )
+    .eq("userId", session.user.id)
+    .order("createdAt", { ascending: false });
 
-  const properties = favorites.map((fav) => fav.property) as PropertyCardData[];
+  if (error) {
+    console.error("[UserFavoritesPage] Failed to load favorites", formatSupabaseError(error));
+  }
+
+  const properties = (favorites ?? [])
+    .map((fav) => {
+      const property = fav.property;
+      if (!property) return null;
+      const images = Array.isArray(property.images) ? property.images : [];
+      const primary =
+        images.find((img: { isPrimary?: boolean }) => img.isPrimary) ?? images[0];
+      return {
+        ...property,
+        images: primary ? [{ url: primary.url }] : [],
+      } as PropertyCardData;
+    })
+    .filter(Boolean) as PropertyCardData[];
 
   return (
     <div className="space-y-6">

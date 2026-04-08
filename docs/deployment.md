@@ -5,12 +5,11 @@
 2. Set the build command to `npm run build` and output directory to `.next` (default).
 3. Add environment variables listed in `.env.example`.
 
-## 2) Supabase Postgres + Pooler
-1. Create a Supabase project and get the connection pooler URL.
-2. Set `DATABASE_URL` to the pooler connection string with `sslmode=verify-full`.
-3. Download the Supabase CA certificate and set `PG_SSL_CERT_PATH=certs/prod-ca-2021.crt`.
-4. (Optional) If your environment injects a custom TLS root, also set `NODE_EXTRA_CA_CERTS` to that CA file.
-5. Run Prisma migrations or `npx prisma db push` locally against the same URL.
+## 2) Supabase Project
+1. Create a Supabase project.
+2. Set `NEXT_PUBLIC_SUPABASE_URL` to your project URL.
+3. Set `SUPABASE_SERVICE_ROLE_KEY` to the service role key (server-only).
+4. Ensure the required tables exist in the `public` schema (see `prisma/schema.prisma` for the structure).
 
 ## 3) Cloudinary
 1. Create a Cloudinary account and add the cloud name, API key, and API secret.

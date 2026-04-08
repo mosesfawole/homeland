@@ -1,4 +1,15 @@
-import { ListingType, PropertyType, type Prisma } from "@prisma/client";
+import { LISTING_TYPES, PROPERTY_TYPES, type ListingType, type PropertyType } from "@/lib/db-types";
+
+export type PropertyFilterInput = {
+  query?: string;
+  propertyType?: PropertyType;
+  listingType?: ListingType;
+  city?: string;
+  state?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  bedrooms?: number;
+};
 
 const DEFAULT_LIMIT = 12;
 const MAX_LIMIT = 48;
@@ -20,44 +31,29 @@ export function parsePagination(searchParams: URLSearchParams) {
 
 export function buildPropertyFilters(
   searchParams: URLSearchParams,
-): Prisma.PropertyWhereInput {
-  const where: Prisma.PropertyWhereInput = {
-    status: "ACTIVE",
-  };
+): PropertyFilterInput {
+  const filters: PropertyFilterInput = {};
 
   const query = searchParams.get("q") || searchParams.get("query");
   if (query) {
-    where.OR = [
-      { title: { contains: query, mode: "insensitive" } },
-      { description: { contains: query, mode: "insensitive" } },
-      { address: { contains: query, mode: "insensitive" } },
-      { city: { contains: query, mode: "insensitive" } },
-      { state: { contains: query, mode: "insensitive" } },
-      { neighborhood: { contains: query, mode: "insensitive" } },
-    ];
+    filters.query = query;
   }
 
   const propertyType = searchParams.get("propertyType");
-  if (
-    propertyType &&
-    (Object.values(PropertyType) as string[]).includes(propertyType)
-  ) {
-    where.propertyType = propertyType as PropertyType;
+  if (propertyType && (PROPERTY_TYPES as readonly string[]).includes(propertyType)) {
+    filters.propertyType = propertyType as PropertyType;
   }
 
   const listingType = searchParams.get("listingType");
-  if (
-    listingType &&
-    (Object.values(ListingType) as string[]).includes(listingType)
-  ) {
-    where.listingType = listingType as ListingType;
+  if (listingType && (LISTING_TYPES as readonly string[]).includes(listingType)) {
+    filters.listingType = listingType as ListingType;
   }
 
   const city = searchParams.get("city");
-  if (city) where.city = { equals: city, mode: "insensitive" };
+  if (city) filters.city = city;
 
   const state = searchParams.get("state");
-  if (state) where.state = { equals: state, mode: "insensitive" };
+  if (state) filters.state = state;
 
   const minPriceRaw = searchParams.get("minPrice");
   const maxPriceRaw = searchParams.get("maxPrice");
@@ -70,17 +66,13 @@ export function buildPropertyFilters(
       ? Number(maxPriceRaw)
       : undefined;
 
-  if (Number.isFinite(minPrice) || Number.isFinite(maxPrice)) {
-    where.price = {
-      ...(Number.isFinite(minPrice) ? { gte: minPrice } : {}),
-      ...(Number.isFinite(maxPrice) ? { lte: maxPrice } : {}),
-    };
-  }
+  if (Number.isFinite(minPrice)) filters.minPrice = minPrice;
+  if (Number.isFinite(maxPrice)) filters.maxPrice = maxPrice;
 
   const bedrooms = Number(searchParams.get("bedrooms") ?? "");
   if (Number.isFinite(bedrooms) && bedrooms > 0) {
-    where.bedrooms = { gte: bedrooms };
+    filters.bedrooms = bedrooms;
   }
 
-  return where;
+  return filters;
 }

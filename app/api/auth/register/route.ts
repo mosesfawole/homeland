@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { registerSchema } from "@/lib/validations/auth";
+import { getSupabaseAdmin, formatSupabaseError } from "@/lib/supabase-server";
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,8 +17,23 @@ export async function POST(req: NextRequest) {
 
     const { name, email, password, role } = parsed.data;
 
+    const supabase = getSupabaseAdmin();
+
     // Check email not already taken
-    const existing = await prisma.user.findUnique({ where: { email } });
+    const { data: existing, error: existingError } = await supabase
+      .from("User")
+      .select("id")
+      .eq("email", email)
+      .maybeSingle();
+
+    if (existingError) {
+      console.error("[POST /api/auth/register] Email check failed", formatSupabaseError(existingError));
+      return NextResponse.json(
+        { error: "Unable to validate email. Please try again." },
+        { status: 500 },
+      );
+    }
+
     if (existing) {
       return NextResponse.json(
         { error: "An account with this email already exists" },
@@ -28,21 +43,37 @@ export async function POST(req: NextRequest) {
 
     const hashed = await bcrypt.hash(password, 12);
 
-    // Create user + agent profile in a transaction
-    const user = await prisma.$transaction(async (tx) => {
-      const newUser = await tx.user.create({
-        data: { name, email, password: hashed, role },
-      });
+    const { data: user, error: userError } = await supabase
+      .from("User")
+      .insert({ name, email, password: hashed, role })
+      .select("id")
+      .single();
 
-      // Automatically scaffold an agent profile
-      if (role === "AGENT") {
-        await tx.agentProfile.create({
-          data: { userId: newUser.id },
-        });
+    if (userError || !user) {
+      console.error("[POST /api/auth/register] User create failed", formatSupabaseError(userError ?? { message: "User not created" }));
+      return NextResponse.json(
+        { error: "Registration failed. Please try again." },
+        { status: 500 },
+      );
+    }
+
+    if (role === "AGENT") {
+      const { error: agentError } = await supabase
+        .from("AgentProfile")
+        .insert({ userId: user.id })
+        .select("id")
+        .single();
+
+      if (agentError) {
+        // Roll back user if agent profile creation fails
+        await supabase.from("User").delete().eq("id", user.id);
+        console.error("[POST /api/auth/register] Agent profile create failed", formatSupabaseError(agentError));
+        return NextResponse.json(
+          { error: "Registration failed. Please try again." },
+          { status: 500 },
+        );
       }
-
-      return newUser;
-    });
+    }
 
     return NextResponse.json(
       { message: "Account created successfully", userId: user.id },

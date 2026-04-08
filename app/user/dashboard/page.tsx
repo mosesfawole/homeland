@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import { getSupabaseAdmin } from "@/lib/supabase-server";
 
 export const metadata = {
   title: "User Overview - Homeland",
@@ -10,16 +10,24 @@ export default async function UserDashboardPage() {
   const session = await auth();
   if (!session || session.user.role !== "USER") redirect("/login");
 
-  const [favoritesCount, upcomingTours] = await Promise.all([
-    prisma.favorite.count({ where: { userId: session.user.id } }),
-    prisma.booking.count({
-      where: {
-        userId: session.user.id,
-        status: { in: ["PENDING", "CONFIRMED"] },
-        tourDate: { gte: new Date() },
-      },
-    }),
+  const supabase = getSupabaseAdmin();
+  const nowIso = new Date().toISOString();
+
+  const [favorites, upcoming] = await Promise.all([
+    supabase
+      .from("Favorite")
+      .select("id", { count: "exact", head: true })
+      .eq("userId", session.user.id),
+    supabase
+      .from("Booking")
+      .select("id", { count: "exact", head: true })
+      .eq("userId", session.user.id)
+      .in("status", ["PENDING", "CONFIRMED"])
+      .gte("tourDate", nowIso),
   ]);
+
+  const favoritesCount = favorites.count ?? 0;
+  const upcomingTours = upcoming.count ?? 0;
 
   return (
     <div className="space-y-6">

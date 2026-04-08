@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { sendBookingReceivedEmail } from "@/lib/email";
+import { formatSupabaseError, getSupabaseAdmin } from "@/lib/supabase-server";
 
 export const runtime = "nodejs";
 
@@ -31,20 +31,26 @@ export async function POST(req: NextRequest) {
     }
 
     const { propertyId, tourDate, tourTime, message } = parsed.data;
-    const property = await prisma.property.findUnique({
-      where: { id: propertyId },
-      select: {
-        id: true,
-        status: true,
-        title: true,
-        agentProfile: {
-          select: {
-            id: true,
-            user: { select: { email: true, name: true } },
-          },
-        },
-      },
-    });
+    const supabase = getSupabaseAdmin();
+    const { data: property, error: propertyError } = await supabase
+      .from("Property")
+      .select(
+        `
+        id,
+        status,
+        title,
+        agentProfile:AgentProfile(
+          id,
+          user:User(email, name)
+        )
+      `,
+      )
+      .eq("id", propertyId)
+      .maybeSingle();
+
+    if (propertyError) {
+      console.error("[POST /api/bookings] Property lookup failed", formatSupabaseError(propertyError));
+    }
 
     if (!property || property.status !== "ACTIVE") {
       return NextResponse.json(
@@ -61,20 +67,30 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const booking = await prisma.booking.create({
-      data: {
+    const { data: booking, error: bookingError } = await supabase
+      .from("Booking")
+      .insert({
         userId: session.user.id,
         propertyId,
-        tourDate: tourDateTime,
+        tourDate: tourDateTime.toISOString(),
         tourTime,
-        message,
+        message: message ?? null,
         status: "PENDING",
-      },
-    });
+      })
+      .select("*")
+      .single();
+
+    if (bookingError || !booking) {
+      console.error("[POST /api/bookings] Booking create failed", formatSupabaseError(bookingError ?? { message: "Booking not created" }));
+      return NextResponse.json(
+        { error: "Failed to create booking" },
+        { status: 500 },
+      );
+    }
 
     await sendBookingReceivedEmail({
-      agentEmail: property.agentProfile?.user?.email,
-      agentName: property.agentProfile?.user?.name,
+      agentEmail: property.agentProfile?.user?.email ?? null,
+      agentName: property.agentProfile?.user?.name ?? null,
       propertyTitle: property.title,
       tourDate: tourDateTime.toLocaleDateString("en-NG"),
       tourTime,

@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { timeAgo } from "@/lib/utils/format";
+import { formatSupabaseError, getSupabaseAdmin } from "@/lib/supabase-server";
 
 export const metadata = {
   title: "Reports - Homeland",
@@ -11,13 +11,26 @@ export default async function AdminReportsPage() {
   const session = await auth();
   if (!session || session.user.role !== "ADMIN") redirect("/login");
 
-  const reports = await prisma.report.findMany({
-    orderBy: { createdAt: "desc" },
-    include: {
-      property: { select: { title: true } },
-      user: { select: { name: true, email: true } },
-    },
-  });
+  const supabase = getSupabaseAdmin();
+  const { data: reports, error } = await supabase
+    .from("Report")
+    .select(
+      `
+      id,
+      reason,
+      details,
+      createdAt,
+      property:Property(title),
+      user:User(name, email)
+    `,
+    )
+    .order("createdAt", { ascending: false });
+
+  if (error) {
+    console.error("[AdminReportsPage] Failed to load reports", formatSupabaseError(error));
+  }
+
+  const reportList = reports ?? [];
 
   return (
     <div className="space-y-6">
@@ -29,7 +42,7 @@ export default async function AdminReportsPage() {
       </div>
 
       <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
-        {reports.length === 0 ? (
+        {reportList.length === 0 ? (
           <div className="p-8 text-center text-sm text-gray-500">
             No reports yet.
           </div>
@@ -45,13 +58,13 @@ export default async function AdminReportsPage() {
               </tr>
             </thead>
             <tbody>
-              {reports.map((report) => (
+              {reportList.map((report) => (
                 <tr key={report.id} className="border-t border-gray-100">
                   <td className="px-4 py-3 text-gray-900">
-                    {report.property.title}
+                    {report.property?.title ?? "-"}
                   </td>
                   <td className="px-4 py-3 text-gray-600">
-                    {report.user.name ?? report.user.email}
+                    {report.user?.name ?? report.user?.email ?? "-"}
                   </td>
                   <td className="px-4 py-3 text-gray-600">
                     {report.reason}

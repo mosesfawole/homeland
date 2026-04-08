@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { formatSupabaseError, getSupabaseAdmin } from "@/lib/supabase-server";
 
 const verifySchema = z.object({
   propertyId: z.string().min(1),
@@ -44,10 +44,21 @@ export async function POST(req: NextRequest) {
       updateData.isFeatured = isFeatured;
     }
 
-    const updated = await prisma.property.update({
-      where: { id: propertyId },
-      data: updateData,
-    });
+    const supabase = getSupabaseAdmin();
+    const { data: updated, error: updateError } = await supabase
+      .from("Property")
+      .update(updateData)
+      .eq("id", propertyId)
+      .select("*")
+      .single();
+
+    if (updateError || !updated) {
+      console.error("[POST /api/admin/verify-property] Update failed", formatSupabaseError(updateError ?? { message: "Property not updated" }));
+      return NextResponse.json(
+        { error: "Failed to update property" },
+        { status: 500 },
+      );
+    }
 
     return NextResponse.json({ message: "Property updated", data: updated });
   } catch (err: unknown) {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { z } from "zod";
+import { formatSupabaseError, getSupabaseAdmin } from "@/lib/supabase-server";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -27,10 +27,16 @@ export async function POST(req: NextRequest, { params }: Params) {
     }
 
     const { id } = await params;
-    const property = await prisma.property.findUnique({
-      where: { id },
-      select: { id: true },
-    });
+    const supabase = getSupabaseAdmin();
+    const { data: property, error: propertyError } = await supabase
+      .from("Property")
+      .select("id")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (propertyError) {
+      console.error("[POST /api/properties/[id]/report] Property lookup failed", formatSupabaseError(propertyError));
+    }
 
     if (!property) {
       return NextResponse.json(
@@ -39,14 +45,24 @@ export async function POST(req: NextRequest, { params }: Params) {
       );
     }
 
-    const report = await prisma.report.create({
-      data: {
+    const { data: report, error: reportError } = await supabase
+      .from("Report")
+      .insert({
         propertyId: id,
         userId: session.user.id,
         reason: parsed.data.reason,
-        details: parsed.data.details,
-      },
-    });
+        details: parsed.data.details ?? null,
+      })
+      .select("*")
+      .single();
+
+    if (reportError || !report) {
+      console.error("[POST /api/properties/[id]/report] Report create failed", formatSupabaseError(reportError ?? { message: "Report not created" }));
+      return NextResponse.json(
+        { error: "Failed to submit report" },
+        { status: 500 },
+      );
+    }
 
     return NextResponse.json({ message: "Report submitted", data: report });
   } catch (err: unknown) {

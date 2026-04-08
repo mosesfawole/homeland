@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import { getSupabaseAdmin } from "@/lib/supabase-server";
 
 export const metadata = {
   title: "Agent Overview - Homeland",
@@ -10,25 +10,42 @@ export default async function AgentDashboardPage() {
   const session = await auth();
   if (!session || session.user.role !== "AGENT") redirect("/login");
 
-  const agentProfile = await prisma.agentProfile.findUnique({
-    where: { userId: session.user.id },
-    select: { id: true, verificationStatus: true, totalListings: true },
-  });
+  const supabase = getSupabaseAdmin();
+  const { data: agentProfile } = await supabase
+    .from("AgentProfile")
+    .select("id, verificationStatus, totalListings")
+    .eq("userId", session.user.id)
+    .maybeSingle();
 
   if (!agentProfile) redirect("/agent/verification");
 
-  const [listingCount, bookingCount, viewsAgg] = await Promise.all([
-    prisma.property.count({ where: { agentProfileId: agentProfile.id } }),
-    prisma.booking.count({
-      where: { property: { agentProfileId: agentProfile.id } },
-    }),
-    prisma.property.aggregate({
-      where: { agentProfileId: agentProfile.id },
-      _sum: { viewCount: true },
-    }),
+  const [propertiesResult, bookingsResult] = await Promise.all([
+    supabase
+      .from("Property")
+      .select("id, viewCount", { count: "exact" })
+      .eq("agentProfileId", agentProfile.id),
+    supabase
+      .from("Property")
+      .select("id")
+      .eq("agentProfileId", agentProfile.id),
   ]);
 
-  const totalViews = viewsAgg._sum.viewCount ?? 0;
+  const listingCount = propertiesResult.count ?? 0;
+  const propertyIds = (bookingsResult.data ?? []).map((row) => row.id);
+
+  const bookingCount = propertyIds.length
+    ? (
+        await supabase
+          .from("Booking")
+          .select("id", { count: "exact", head: true })
+          .in("propertyId", propertyIds)
+      ).count ?? 0
+    : 0;
+
+  const totalViews = (propertiesResult.data ?? []).reduce(
+    (sum, property) => sum + (property.viewCount ?? 0),
+    0,
+  );
 
   return (
     <div className="space-y-6">

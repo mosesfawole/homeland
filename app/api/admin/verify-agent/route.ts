@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { formatSupabaseError, getSupabaseAdmin } from "@/lib/supabase-server";
 
 const verifySchema = z.object({
   agentProfileId: z.string().min(1),
@@ -28,15 +28,26 @@ export async function POST(req: NextRequest) {
 
     const { agentProfileId, status, rejectionReason } = parsed.data;
 
-    const updated = await prisma.agentProfile.update({
-      where: { id: agentProfileId },
-      data: {
+    const supabase = getSupabaseAdmin();
+    const { data: updated, error: updateError } = await supabase
+      .from("AgentProfile")
+      .update({
         verificationStatus: status,
-        verifiedAt: status === "VERIFIED" ? new Date() : null,
+        verifiedAt: status === "VERIFIED" ? new Date().toISOString() : null,
         verifiedBy: status === "VERIFIED" ? session.user.id : null,
         rejectionReason: status === "REJECTED" ? rejectionReason ?? null : null,
-      },
-    });
+      })
+      .eq("id", agentProfileId)
+      .select("*")
+      .single();
+
+    if (updateError || !updated) {
+      console.error("[POST /api/admin/verify-agent] Update failed", formatSupabaseError(updateError ?? { message: "Agent not updated" }));
+      return NextResponse.json(
+        { error: "Failed to update agent" },
+        { status: 500 },
+      );
+    }
 
     return NextResponse.json({ message: "Agent updated", data: updated });
   } catch (err: unknown) {

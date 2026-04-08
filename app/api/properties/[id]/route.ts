@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { propertySchema, type PropertyFormInput } from "@/lib/validations/property";
-import { PropertyStatus, VerificationStatus } from "@prisma/client";
 import type { PropertyImageInput } from "@/types";
+import { PROPERTY_STATUSES, type PropertyStatus, type VerificationStatus } from "@/lib/db-types";
+import { formatSupabaseError, getSupabaseAdmin } from "@/lib/supabase-server";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -12,37 +12,34 @@ type Params = { params: Promise<{ id: string }> };
 export async function GET(req: NextRequest, { params }: Params) {
   try {
     const { id } = await params;
+    const supabase = getSupabaseAdmin();
 
-    const property = await prisma.property.findUnique({
-      where: { id },
-      include: {
-        images: { orderBy: [{ isPrimary: "desc" }, { order: "asc" }] },
-        videos: true,
-        agentProfile: {
-          include: {
-            user: {
-              select: {
-                name: true,
-                email: true,
-                avatar: true,
-                phone: true,
-                createdAt: true,
-              },
-            },
-          },
-        },
-        reviews: {
-          include: {
-            user: { select: { name: true, avatar: true } },
-          },
-          orderBy: { createdAt: "desc" },
-          take: 10,
-        },
-        _count: {
-          select: { bookings: true, reviews: true, favorites: true },
-        },
-      },
-    });
+    const { data: property, error } = await supabase
+      .from("Property")
+      .select(
+        `
+        *,
+        images:PropertyImage(*),
+        videos:PropertyVideo(*),
+        agentProfile:AgentProfile(
+          *,
+          user:User(name, email, avatar, phone, createdAt)
+        ),
+        reviews:Review(
+          id,
+          rating,
+          comment,
+          createdAt,
+          user:User(name, avatar)
+        )
+      `,
+      )
+      .eq("id", id)
+      .single();
+
+    if (error) {
+      console.error("[GET /api/properties/[id]] Supabase error", formatSupabaseError(error));
+    }
 
     if (!property) {
       return NextResponse.json(
@@ -63,15 +60,63 @@ export async function GET(req: NextRequest, { params }: Params) {
       );
     }
 
+    const [bookingsCount, reviewsCount, favoritesCount] = await Promise.all([
+      supabase
+        .from("Booking")
+        .select("id", { count: "exact", head: true })
+        .eq("propertyId", id)
+        .then((res) => res.count ?? 0),
+      supabase
+        .from("Review")
+        .select("id", { count: "exact", head: true })
+        .eq("propertyId", id)
+        .then((res) => res.count ?? 0),
+      supabase
+        .from("Favorite")
+        .select("id", { count: "exact", head: true })
+        .eq("propertyId", id)
+        .then((res) => res.count ?? 0),
+    ]);
+
+    const viewCount = typeof property.viewCount === "number" ? property.viewCount : 0;
+
     // Increment view count — fire and forget
-    prisma.property
-      .update({
-        where: { id },
-        data: { viewCount: { increment: 1 } },
-      })
+    supabase
+      .from("Property")
+      .update({ viewCount: viewCount + 1 })
+      .eq("id", id)
+      .then(() => {})
       .catch(() => {});
 
-    return NextResponse.json({ data: property });
+    const images = Array.isArray(property.images)
+      ? property.images.sort((a, b) => {
+          if (a.isPrimary !== b.isPrimary) return a.isPrimary ? -1 : 1;
+          return (a.order ?? 0) - (b.order ?? 0);
+        })
+      : [];
+
+    const reviews = Array.isArray(property.reviews)
+      ? property.reviews
+          .slice()
+          .sort(
+            (a, b) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+          )
+          .slice(0, 10)
+      : [];
+
+    return NextResponse.json({
+      data: {
+        ...property,
+        images,
+        reviews,
+        _count: {
+          bookings: bookingsCount,
+          reviews: reviewsCount,
+          favorites: favoritesCount,
+        },
+      },
+    });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[GET /api/properties/[id]]", message);
@@ -92,11 +137,17 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const supabase = getSupabaseAdmin();
 
-    const property = await prisma.property.findUnique({
-      where: { id },
-      select: { agentProfileId: true, status: true },
-    });
+    const { data: property, error: propertyError } = await supabase
+      .from("Property")
+      .select("agentProfileId, status")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (propertyError) {
+      console.error("[PATCH /api/properties/[id]] Supabase error", formatSupabaseError(propertyError));
+    }
 
     if (!property) {
       return NextResponse.json(
@@ -128,7 +179,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     let updateData: Partial<PropertyFormInput> & AdminUpdateFields = {};
 
     const isPropertyStatus = (value: string): value is PropertyStatus =>
-      (Object.values(PropertyStatus) as string[]).includes(value);
+      (PROPERTY_STATUSES as readonly string[]).includes(value);
 
     if (isAdmin && typeof body.status === "string" && isPropertyStatus(body.status)) {
       updateData.status = body.status;
@@ -170,25 +221,43 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       delete (updateData as any).images;
     }
 
-    const updated = await prisma.property.update({
-      where: { id },
-      data: {
-        ...updateData,
-        ...(nextImages
-          ? {
-              images: {
-                deleteMany: {},
-                create: nextImages.map((image, index) => ({
-                  url: image.url,
-                  publicId: image.publicId,
-                  isPrimary: image.isPrimary ?? index === 0,
-                  order: image.order ?? index,
-                })),
-              },
-            }
-          : {}),
-      },
-    });
+    const { data: updated, error: updateError } = await supabase
+      .from("Property")
+      .update(updateData)
+      .eq("id", id)
+      .select("*")
+      .single();
+
+    if (updateError || !updated) {
+      console.error("[PATCH /api/properties/[id]] Update failed", formatSupabaseError(updateError ?? { message: "Property not updated" }));
+      return NextResponse.json(
+        { error: "Failed to update property" },
+        { status: 500 },
+      );
+    }
+
+    if (nextImages) {
+      await supabase.from("PropertyImage").delete().eq("propertyId", id);
+      if (nextImages.length > 0) {
+        const imageRows = nextImages.map((image, index) => ({
+          propertyId: id,
+          url: image.url,
+          publicId: image.publicId,
+          isPrimary: image.isPrimary ?? index === 0,
+          order: image.order ?? index,
+        }));
+        const { error: imagesError } = await supabase
+          .from("PropertyImage")
+          .insert(imageRows);
+        if (imagesError) {
+          console.error("[PATCH /api/properties/[id]] Image update failed", formatSupabaseError(imagesError));
+          return NextResponse.json(
+            { error: "Failed to update property images" },
+            { status: 500 },
+          );
+        }
+      }
+    }
 
     return NextResponse.json({ data: updated });
   } catch (err: unknown) {
@@ -212,10 +281,17 @@ export async function DELETE(req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const property = await prisma.property.findUnique({
-      where: { id },
-      select: { agentProfileId: true },
-    });
+    const supabase = getSupabaseAdmin();
+
+    const { data: property, error: propertyError } = await supabase
+      .from("Property")
+      .select("agentProfileId")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (propertyError) {
+      console.error("[DELETE /api/properties/[id]] Supabase error", formatSupabaseError(propertyError));
+    }
 
     if (!property) {
       return NextResponse.json(
@@ -231,15 +307,32 @@ export async function DELETE(req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    await prisma.property.delete({ where: { id } });
+    const { error: deleteError } = await supabase
+      .from("Property")
+      .delete()
+      .eq("id", id);
+
+    if (deleteError) {
+      console.error("[DELETE /api/properties/[id]] Delete failed", formatSupabaseError(deleteError));
+      return NextResponse.json(
+        { error: "Failed to delete property" },
+        { status: 500 },
+      );
+    }
 
     // Decrement agent listing count
     if (property.agentProfileId) {
-      await prisma.agentProfile
-        .update({
-          where: { id: property.agentProfileId },
-          data: { totalListings: { decrement: 1 } },
-        })
+      const { data: agentProfile } = await supabase
+        .from("AgentProfile")
+        .select("totalListings")
+        .eq("id", property.agentProfileId)
+        .maybeSingle();
+      const current = agentProfile?.totalListings ?? 0;
+      await supabase
+        .from("AgentProfile")
+        .update({ totalListings: Math.max(current - 1, 0) })
+        .eq("id", property.agentProfileId)
+        .then(() => {})
         .catch(() => {});
     }
 

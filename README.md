@@ -1,6 +1,6 @@
 # Homeland
 
-Verified Nigerian real estate marketplace built with Next.js App Router, Prisma, and NextAuth.
+Verified Nigerian real estate marketplace built with Next.js App Router, Supabase, and NextAuth.
 
 ## Default Branch
 This repository uses `main` as the default branch.
