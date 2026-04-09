@@ -60,6 +60,9 @@ export default function KycForm({
 }: Props) {
   const [govId, setGovId] = useState<string | null>(govIdUrl);
   const [cacDoc, setCacDoc] = useState<string | null>(cacDocUrl);
+  const [govIdName, setGovIdName] = useState<string | null>(null);
+  const [cacDocName, setCacDocName] = useState<string | null>(null);
+  const [uploading, setUploading] = useState<"gov" | "cac" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -110,7 +113,7 @@ export default function KycForm({
           Upload your KYC documents to get verified.
         </p>
         <p className="text-xs text-gray-400 mt-2">
-          Status: {verificationStatus}
+          Status: <span className="font-semibold text-gray-600">{verificationStatus}</span>
         </p>
       </div>
 
@@ -130,38 +133,68 @@ export default function KycForm({
           <label className="block text-sm font-medium text-gray-700 mb-1.5">
             Government ID
           </label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={async (event) => {
-              const file = event.target.files?.[0];
-              if (!file) return;
-              await handleUpload(file, (url) => setGovId(url));
-            }}
-            className="w-full text-sm"
-          />
-          {govId && (
-            <p className="text-xs text-gray-500 mt-1">Uploaded</p>
-          )}
+          <div className="flex items-center gap-3 rounded-lg border border-dashed border-slate-200 bg-slate-50 px-3 py-3">
+            <label className="inline-flex items-center px-3 py-2 rounded-md bg-slate-900 text-white text-xs font-semibold cursor-pointer hover:bg-slate-800 transition">
+              Choose file
+              <input
+                type="file"
+                accept="image/*"
+                onChange={async (event) => {
+                  const file = event.target.files?.[0];
+                  if (!file) return;
+                  setGovIdName(file.name);
+                  setUploading("gov");
+                  try {
+                    await handleUpload(file, (url) => setGovId(url));
+                  } catch (err: unknown) {
+                    setError(err instanceof Error ? err.message : "Upload failed.");
+                  } finally {
+                    setUploading(null);
+                  }
+                }}
+                className="sr-only"
+              />
+            </label>
+            <span className="text-xs text-slate-600 truncate">
+              {uploading === "gov"
+                ? "Uploading..."
+                : govIdName ?? (govId ? "Uploaded" : "No file selected")}
+            </span>
+          </div>
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1.5">
             CAC Document (optional)
           </label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={async (event) => {
-              const file = event.target.files?.[0];
-              if (!file) return;
-              await handleUpload(file, (url) => setCacDoc(url));
-            }}
-            className="w-full text-sm"
-          />
-          {cacDoc && (
-            <p className="text-xs text-gray-500 mt-1">Uploaded</p>
-          )}
+          <div className="flex items-center gap-3 rounded-lg border border-dashed border-slate-200 bg-slate-50 px-3 py-3">
+            <label className="inline-flex items-center px-3 py-2 rounded-md bg-slate-900 text-white text-xs font-semibold cursor-pointer hover:bg-slate-800 transition">
+              Choose file
+              <input
+                type="file"
+                accept="image/*"
+                onChange={async (event) => {
+                  const file = event.target.files?.[0];
+                  if (!file) return;
+                  setCacDocName(file.name);
+                  setUploading("cac");
+                  try {
+                    await handleUpload(file, (url) => setCacDoc(url));
+                  } catch (err: unknown) {
+                    setError(err instanceof Error ? err.message : "Upload failed.");
+                  } finally {
+                    setUploading(null);
+                  }
+                }}
+                className="sr-only"
+              />
+            </label>
+            <span className="text-xs text-slate-600 truncate">
+              {uploading === "cac"
+                ? "Uploading..."
+                : cacDocName ?? (cacDoc ? "Uploaded" : "No file selected")}
+            </span>
+          </div>
         </div>
       </div>
 
