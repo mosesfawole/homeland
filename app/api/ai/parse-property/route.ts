@@ -168,8 +168,9 @@ async function callAnthropic(description: string) {
 }
 
 async function callOpenRouter(description: string) {
-  const apiKey = process.env.OPENROUTER_API_KEY;
-  const model = process.env.OPENROUTER_MODEL;
+  const rawKey = process.env.OPENROUTER_API_KEY;
+  const apiKey = rawKey?.trim().replace(/^Bearer\s+/i, "");
+  const model = process.env.OPENROUTER_MODEL?.trim();
   const baseUrl =
     process.env.NEXT_PUBLIC_SITE_URL ??
     process.env.NEXTAUTH_URL ??
