@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { v2 as cloudinary } from "cloudinary";
-import { getRequestIp, rateLimit } from "@/lib/security";
+import { getRequestIp, checkRateLimit } from "@/lib/security";
 
 export const runtime = "nodejs";
 
@@ -14,7 +14,7 @@ cloudinary.config({
 export async function POST(req: NextRequest) {
   try {
     const ip = getRequestIp(req);
-    const limit = rateLimit(`upload-signature:${ip}`, 20, 60_000);
+    const limit = await checkRateLimit(`upload-signature:${ip}`, 20, 60_000);
     if (!limit.ok) {
       return NextResponse.json(
         { error: "Too many upload attempts. Please try again shortly." },

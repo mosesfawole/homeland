@@ -12,6 +12,8 @@ export default function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "";
+  const verified = searchParams.get("verified");
+  const pending = searchParams.get("pending");
   const [showPass, setShowPass] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
@@ -31,7 +33,11 @@ export default function LoginForm() {
       });
 
       if (result?.error) {
-        setAuthError("Invalid email or password");
+        if (result.error.toLowerCase().includes("emailnotverified")) {
+          setAuthError("Please verify your email before signing in.");
+        } else {
+          setAuthError("Invalid email or password");
+        }
         return;
       }
 
@@ -61,6 +67,21 @@ export default function LoginForm() {
       {authError && (
         <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">
           {authError}
+        </div>
+      )}
+      {verified === "1" && (
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm px-4 py-3 rounded-lg">
+          Email verified. You can sign in now.
+        </div>
+      )}
+      {verified === "0" && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-700 text-sm px-4 py-3 rounded-lg">
+          Verification link expired or invalid. Please sign up again.
+        </div>
+      )}
+      {pending === "1" && (
+        <div className="bg-blue-50 border border-blue-200 text-blue-700 text-sm px-4 py-3 rounded-lg">
+          Check your email to verify your account before signing in.
         </div>
       )}
 

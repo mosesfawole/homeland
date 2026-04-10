@@ -2,12 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { registerSchema } from "@/lib/validations/auth";
 import { getSupabaseAdmin, formatSupabaseError } from "@/lib/supabase-server";
-import { getRequestIp, rateLimit } from "@/lib/security";
+import { getRequestIp, checkRateLimit } from "@/lib/security";
+import { createVerificationToken } from "@/lib/token";
+import { sendVerificationEmail } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
   try {
     const ip = getRequestIp(req);
-    const limit = rateLimit(`register:${ip}`, 5, 60_000);
+    const limit = await checkRateLimit(`register:${ip}`, 5, 60_000);
     if (!limit.ok) {
       return NextResponse.json(
         { error: "Too many registration attempts. Please try again shortly." },
@@ -72,8 +74,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    let agentProfileId: string | null = null;
+
     if (role === "AGENT") {
-      const { error: agentError } = await supabase
+      const { data: agentProfile, error: agentError } = await supabase
         .from("AgentProfile")
         .insert({ userId: user.id })
         .select("id")
@@ -88,7 +92,46 @@ export async function POST(req: NextRequest) {
           { status: 500 },
         );
       }
+
+      agentProfileId = agentProfile?.id ?? null;
     }
+
+    const { token, hashed } = createVerificationToken();
+    const expires = new Date(Date.now() + 1000 * 60 * 60 * 24);
+
+    const { error: tokenError } = await supabase
+      .from("VerificationToken")
+      .insert({
+        identifier: email,
+        token: hashed,
+        expires,
+      });
+
+    if (tokenError) {
+      if (agentProfileId) {
+        await supabase.from("AgentProfile").delete().eq("id", agentProfileId);
+      }
+      await supabase.from("User").delete().eq("id", user.id);
+      console.error("[POST /api/auth/register] Verification token create failed", formatSupabaseError(tokenError));
+      return NextResponse.json(
+        { error: "Registration failed. Please try again." },
+        { status: 500 },
+      );
+    }
+
+    const baseUrl =
+      process.env.NEXT_PUBLIC_SITE_URL ??
+      process.env.NEXTAUTH_URL ??
+      "http://localhost:3000";
+    const verifyUrl = `${baseUrl}/api/auth/verify?token=${token}&email=${encodeURIComponent(
+      email,
+    )}`;
+
+    await sendVerificationEmail({
+      userEmail: email,
+      userName: name,
+      verifyUrl,
+    });
 
     return NextResponse.json(
       { message: "Account created successfully", userId: user.id },

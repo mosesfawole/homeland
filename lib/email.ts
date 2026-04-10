@@ -115,3 +115,31 @@ export async function sendBookingCancelledEmail(params: {
     `,
   });
 }
+
+export async function sendVerificationEmail(params: {
+  userEmail?: string | null;
+  userName?: string | null;
+  verifyUrl: string;
+}) {
+  if (!resend || !params.userEmail) {
+    if (process.env.NODE_ENV !== "production") {
+      console.info("[verify-email] link:", params.verifyUrl);
+    }
+    return;
+  }
+
+  const name = params.userName ?? "there";
+  const subject = "Verify your Homeland account";
+
+  await sendEmail({
+    to: params.userEmail,
+    subject,
+    text: `Hi ${name},\n\nThanks for signing up on Homeland. Please verify your email by clicking the link below:\n${params.verifyUrl}\n\nIf you didn't create this account, you can ignore this email.`,
+    html: `
+      <p>Hi ${name},</p>
+      <p>Thanks for signing up on Homeland. Please verify your email by clicking the link below:</p>
+      <p><a href="${params.verifyUrl}">Verify your email</a></p>
+      <p style="color:#64748b;font-size:12px">If you didn't create this account, you can ignore this email.</p>
+    `,
+  });
+}

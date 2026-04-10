@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
-import { getRequestIp, rateLimit } from "@/lib/security";
+import { getRequestIp, checkRateLimit } from "@/lib/security";
 
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -145,7 +145,7 @@ Examples: "24hr power", "running water", "security", "CCTV", "gym",
 export async function POST(req: NextRequest) {
   try {
     const ip = getRequestIp(req);
-    const limit = rateLimit(`ai-parse:${ip}`, 10, 60_000);
+    const limit = await checkRateLimit(`ai-parse:${ip}`, 10, 60_000);
     if (!limit.ok) {
       return NextResponse.json(
         { error: "Too many requests. Please slow down." },
@@ -269,6 +269,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: "AI returned unexpected output. Please try again." },
         { status: 500 },
+      );
+    }
+
+    if (
+      message.toLowerCase().includes("credit balance is too low") ||
+      message.toLowerCase().includes("insufficient") ||
+      message.toLowerCase().includes("billing")
+    ) {
+      return NextResponse.json(
+        { error: "AI credits are exhausted. Please top up billing." },
+        { status: 402 },
       );
     }
 

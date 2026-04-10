@@ -38,11 +38,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const { data: user, error: userError } = await supabase
           .from("User")
-          .select("id, email, name, role, password")
+          .select("id, email, name, role, password, emailVerified")
           .eq("email", email)
           .maybeSingle();
 
         if (userError || !user || !user.password) return null;
+        if (!user.emailVerified) {
+          throw new Error("EmailNotVerified");
+        }
 
         const { data: agentProfile } = await supabase
           .from("AgentProfile")

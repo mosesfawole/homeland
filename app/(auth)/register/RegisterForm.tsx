@@ -11,6 +11,7 @@ export default function RegisterForm() {
   const router = useRouter();
   const [showPass, setShowPass] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const {
     register,
@@ -23,6 +24,7 @@ export default function RegisterForm() {
 
   const onSubmit = async (data: RegisterInput) => {
     setServerError(null);
+    setSuccess(null);
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
@@ -36,17 +38,10 @@ export default function RegisterForm() {
         return;
       }
 
-      // Auto sign in after register
-      const { signIn } = await import("next-auth/react");
-      await signIn("credentials", {
-        email: data.email,
-        password: data.password,
-        redirect: false,
-      });
-
-      router.push(
-        data.role === "AGENT" ? "/agent/dashboard" : "/user/dashboard",
-      );
+      setSuccess("Account created. Check your email to verify before signing in.");
+      setTimeout(() => {
+        router.push("/login?pending=1");
+      }, 1200);
     } catch {
       setServerError("Something went wrong. Please try again.");
     }
@@ -60,6 +55,11 @@ export default function RegisterForm() {
       {serverError && (
         <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">
           {serverError}
+        </div>
+      )}
+      {success && (
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm px-4 py-3 rounded-lg">
+          {success}
         </div>
       )}
 
