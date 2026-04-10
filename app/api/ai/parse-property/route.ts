@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { getRequestIp, checkRateLimit } from "@/lib/security";
+import Anthropic from "@anthropic-ai/sdk";
 
-const client = new Anthropic({
+const anthropicClient = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
@@ -142,6 +142,91 @@ Examples: "24hr power", "running water", "security", "CCTV", "gym",
   "neighborhood": "string or null - estate/phase name if mentioned"
 }`;
 
+async function callAnthropic(description: string) {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return {
+      ok: false,
+      status: 500,
+      message: "Missing ANTHROPIC_API_KEY in environment.",
+    } as const;
+  }
+
+  const message = await anthropicClient.messages.create({
+    model: "claude-sonnet-4-5",
+    max_tokens: 1024,
+    system: SYSTEM_PROMPT,
+    messages: [
+      {
+        role: "user",
+        content: `Parse this Nigerian property listing:\n\n"${description}"`,
+      },
+    ],
+  });
+
+  const text = message.content[0].type === "text" ? message.content[0].text : "";
+  return { ok: true, text } as const;
+}
+
+async function callOpenRouter(description: string) {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  const model = process.env.OPENROUTER_MODEL;
+  const baseUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    process.env.NEXTAUTH_URL ??
+    "http://localhost:3000";
+
+  if (!apiKey) {
+    return {
+      ok: false,
+      status: 500,
+      message: "Missing OPENROUTER_API_KEY in environment.",
+    } as const;
+  }
+
+  if (!model) {
+    return {
+      ok: false,
+      status: 500,
+      message: "Missing OPENROUTER_MODEL in environment.",
+    } as const;
+  }
+
+  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "HTTP-Referer": baseUrl,
+      "X-OpenRouter-Title": "Homeland",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: 1024,
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        {
+          role: "user",
+          content: `Parse this Nigerian property listing:\n\n"${description}"`,
+        },
+      ],
+    }),
+  });
+
+  const payload = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    return {
+      ok: false,
+      status: res.status,
+      message:
+        payload?.error?.message ??
+        "OpenRouter request failed. Please try again.",
+    } as const;
+  }
+
+  const text = payload?.choices?.[0]?.message?.content ?? "";
+  return { ok: true, text } as const;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const ip = getRequestIp(req);
@@ -155,13 +240,6 @@ export async function POST(req: NextRequest) {
             "Retry-After": String(Math.ceil((limit.resetAt - Date.now()) / 1000)),
           },
         },
-      );
-    }
-
-    if (!process.env.ANTHROPIC_API_KEY) {
-      return NextResponse.json(
-        { error: "Missing ANTHROPIC_API_KEY in environment." },
-        { status: 500 },
       );
     }
 
@@ -187,26 +265,29 @@ export async function POST(req: NextRequest) {
 
     const { description } = parsed.data;
 
-    const message = await client.messages.create({
-      model: "claude-sonnet-4-5",
-      max_tokens: 1024,
-      system: SYSTEM_PROMPT,
-      messages: [
-        {
-          role: "user",
-          content: `Parse this Nigerian property listing:\n\n"${description}"`,
-        },
-      ],
-    });
+    const provider = (process.env.AI_PROVIDER ?? "").toLowerCase();
+    const useOpenRouter =
+      provider === "openrouter" ||
+      (!!process.env.OPENROUTER_API_KEY && provider !== "anthropic");
 
-    const text =
-      message.content[0].type === "text" ? message.content[0].text : "";
+    const aiResponse = useOpenRouter
+      ? await callOpenRouter(description)
+      : await callAnthropic(description);
+
+    if (!aiResponse.ok) {
+      return NextResponse.json(
+        { error: aiResponse.message },
+        { status: aiResponse.status },
+      );
+    }
+
+    const text = aiResponse.text;
 
     // Strip any accidental markdown fences
     const clean = text.replace(/```json|```/g, "").trim();
-    const result = JSON.parse(clean);
+    const parsedResult = JSON.parse(clean);
 
-    const normalized = { ...result } as Record<string, unknown>;
+    const normalized = { ...parsedResult } as Record<string, unknown>;
 
     if (typeof normalized.propertyType === "string") {
       const lower = normalized.propertyType.toLowerCase();
