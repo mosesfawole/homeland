@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
       .eq("status", "ACTIVE");
 
     if (filters.query) {
-      const q = filters.query.replace(/%/g, "").trim();
+      const q = filters.query.replace(/[%(),]/g, "").trim();
       if (q) {
         query = query.or(
           [

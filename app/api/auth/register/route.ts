@@ -2,9 +2,24 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { registerSchema } from "@/lib/validations/auth";
 import { getSupabaseAdmin, formatSupabaseError } from "@/lib/supabase-server";
+import { getRequestIp, rateLimit } from "@/lib/security";
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = getRequestIp(req);
+    const limit = rateLimit(`register:${ip}`, 5, 60_000);
+    if (!limit.ok) {
+      return NextResponse.json(
+        { error: "Too many registration attempts. Please try again shortly." },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(Math.ceil((limit.resetAt - Date.now()) / 1000)),
+          },
+        },
+      );
+    }
+
     const body = await req.json();
     const parsed = registerSchema.safeParse(body);
 

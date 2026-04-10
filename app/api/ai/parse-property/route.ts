@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
+import { getRequestIp, rateLimit } from "@/lib/security";
 
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -35,12 +36,55 @@ const PROPERTY_TYPE_MAP: Record<string, string> = {
   shop: "SHOP",
 };
 
+const outputSchema = z
+  .object({
+    title: z.string().min(3).max(60),
+    propertyType: z.enum([
+      "APARTMENT",
+      "SELF_CONTAIN",
+      "MINI_FLAT",
+      "DUPLEX",
+      "BUNGALOW",
+      "TERRACED",
+      "DETACHED",
+      "SEMI_DETACHED",
+      "PENTHOUSE",
+      "STUDIO",
+      "OFFICE",
+      "LAND",
+      "WAREHOUSE",
+      "SHOP",
+    ]),
+    listingType: z.enum(["RENT", "SALE"]),
+    bedrooms: z.number().int().min(0).max(20).nullable(),
+    bathrooms: z.number().int().min(0).max(20).nullable(),
+    location: z.string().min(2),
+    city: z.string().min(2).nullable(),
+    state: z.string().min(2).nullable(),
+    price: z.number().min(0).nullable(),
+    rentDuration: z.enum(["year", "month"]).nullable(),
+    features: z.array(z.string()).max(30),
+    neighborhood: z.string().nullable(),
+  })
+  .strict();
+
+const parseNumber = (value: unknown): number | null => {
+  if (value === null || value === undefined || value === "") return null;
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const cleaned = value.replace(/[\s,]/g, "");
+    const num = Number(cleaned);
+    return Number.isFinite(num) ? num : null;
+  }
+  return null;
+};
+
 const SYSTEM_PROMPT = `You are a Nigerian real estate data extraction expert.
 
 Your job is to parse a property listing description and extract structured data.
 
 ## STRICT RULES:
-1. Return ONLY valid JSON — no markdown, no explanation, no extra text
+1. Return ONLY valid JSON - no markdown, no explanation, no extra text
 2. NEVER hallucinate data that is not in the description
 3. If a field cannot be determined, return null for that field
 4. Numbers must be actual numbers (not strings)
@@ -49,9 +93,9 @@ Your job is to parse a property listing description and extract structured data.
 - "2M" or "2 million" = 2000000
 - "1.5M" = 1500000
 - "500k" or "500K" = 500000
-- "₦2,000,000" = 2000000
-- "2m per year" → price: 2000000, rentDuration: "year"
-- "150k per month" → price: 150000, rentDuration: "month"
+- "N2,000,000" = 2000000
+- "2m per year" -> price: 2000000, rentDuration: "year"
+- "150k per month" -> price: 150000, rentDuration: "month"
 - If no duration mentioned but it's a rental, default to "year"
 - If it's a sale listing, rentDuration: null
 
@@ -84,22 +128,36 @@ Examples: "24hr power", "running water", "security", "CCTV", "gym",
 
 ## OUTPUT SCHEMA (return exactly this):
 {
-  "title": "string — concise listing title, max 60 chars",
+  "title": "string - concise listing title, max 60 chars",
   "propertyType": "one of the enum values above",
   "listingType": "RENT or SALE",
   "bedrooms": number or null,
   "bathrooms": number or null,
-  "location": "string — specific area name",
-  "city": "string — city name",
-  "state": "string — state name",
+  "location": "string - specific area name",
+  "city": "string - city name",
+  "state": "string - state name",
   "price": number or null,
   "rentDuration": "year" or "month" or null,
   "features": ["array", "of", "strings"],
-  "neighborhood": "string or null — estate/phase name if mentioned"
+  "neighborhood": "string or null - estate/phase name if mentioned"
 }`;
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = getRequestIp(req);
+    const limit = rateLimit(`ai-parse:${ip}`, 10, 60_000);
+    if (!limit.ok) {
+      return NextResponse.json(
+        { error: "Too many requests. Please slow down." },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(Math.ceil((limit.resetAt - Date.now()) / 1000)),
+          },
+        },
+      );
+    }
+
     if (!process.env.ANTHROPIC_API_KEY) {
       return NextResponse.json(
         { error: "Missing ANTHROPIC_API_KEY in environment." },
@@ -148,15 +206,41 @@ export async function POST(req: NextRequest) {
     const clean = text.replace(/```json|```/g, "").trim();
     const result = JSON.parse(clean);
 
-    // Normalize propertyType — handle if AI returns lowercase
-    if (result.propertyType) {
-      const lower = result.propertyType.toLowerCase();
-      result.propertyType =
-        PROPERTY_TYPE_MAP[lower] ?? result.propertyType.toUpperCase();
+    const normalized = { ...result } as Record<string, unknown>;
+
+    if (typeof normalized.propertyType === "string") {
+      const lower = normalized.propertyType.toLowerCase();
+      normalized.propertyType =
+        PROPERTY_TYPE_MAP[lower] ?? normalized.propertyType.toUpperCase();
     }
 
-    // Validate the output has at minimum a title and location
-    if (!result.title || !result.location) {
+    if (typeof normalized.listingType === "string") {
+      normalized.listingType = normalized.listingType.toUpperCase();
+    }
+
+    if (typeof normalized.rentDuration === "string") {
+      normalized.rentDuration = normalized.rentDuration.toLowerCase();
+    }
+
+    normalized.bedrooms = parseNumber(normalized.bedrooms);
+    normalized.bathrooms = parseNumber(normalized.bathrooms);
+    normalized.price = parseNumber(normalized.price);
+
+    if (Array.isArray(normalized.features)) {
+      normalized.features = normalized.features
+        .map((feature) => (typeof feature === "string" ? feature.trim() : ""))
+        .filter(Boolean);
+    } else {
+      normalized.features = [];
+    }
+
+    if (typeof normalized.neighborhood === "string") {
+      normalized.neighborhood = normalized.neighborhood.trim() || null;
+    }
+
+    const parsedOutput = outputSchema.safeParse(normalized);
+
+    if (!parsedOutput.success) {
       return NextResponse.json(
         {
           error:
@@ -166,7 +250,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    return NextResponse.json({ data: result });
+    if (!parsedOutput.data.title || !parsedOutput.data.location) {
+      return NextResponse.json(
+        {
+          error:
+            "Could not extract enough information from the description. Please add more detail.",
+        },
+        { status: 422 },
+      );
+    }
+
+    return NextResponse.json({ data: parsedOutput.data });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[POST /api/ai/parse-property]", message);

@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import AgentSidebarNav from "@/components/layout/AgentSidebarNav";
 
 export default async function AgentLayout({
   children,
@@ -20,32 +20,7 @@ export default async function AgentLayout({
             <h2 className="text-sm font-semibold text-gray-900 mb-4">
               Agent Dashboard
             </h2>
-            <nav className="space-y-2 text-sm">
-              <Link
-                href="/agent/dashboard"
-                className="block px-3 py-2 rounded-lg border border-transparent bg-slate-50 text-slate-700 hover:bg-white hover:border-slate-200 hover:text-slate-900 transition"
-              >
-                Overview
-              </Link>
-              <Link
-                href="/agent/listings"
-                className="block px-3 py-2 rounded-lg border border-transparent bg-slate-50 text-slate-700 hover:bg-white hover:border-slate-200 hover:text-slate-900 transition"
-              >
-                Listings
-              </Link>
-              <Link
-                href="/agent/bookings"
-                className="block px-3 py-2 rounded-lg border border-transparent bg-slate-50 text-slate-700 hover:bg-white hover:border-slate-200 hover:text-slate-900 transition"
-              >
-                Bookings
-              </Link>
-              <Link
-                href="/agent/verification"
-                className="block px-3 py-2 rounded-lg border border-transparent bg-slate-50 text-slate-700 hover:bg-white hover:border-slate-200 hover:text-slate-900 transition"
-              >
-                Verification
-              </Link>
-            </nav>
+            <AgentSidebarNav />
           </aside>
 
           <main>{children}</main>

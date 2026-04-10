@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { v2 as cloudinary } from "cloudinary";
+import { getRequestIp, rateLimit } from "@/lib/security";
 
 export const runtime = "nodejs";
 
@@ -12,6 +13,20 @@ cloudinary.config({
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = getRequestIp(req);
+    const limit = rateLimit(`upload-signature:${ip}`, 20, 60_000);
+    if (!limit.ok) {
+      return NextResponse.json(
+        { error: "Too many upload attempts. Please try again shortly." },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(Math.ceil((limit.resetAt - Date.now()) / 1000)),
+          },
+        },
+      );
+    }
+
     const session = await auth();
     if (session?.user?.role !== "AGENT") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -29,10 +44,12 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json().catch(() => ({}));
-    const folder =
-      typeof body?.folder === "string" && body.folder.trim().length > 0
-        ? body.folder.trim()
-        : "homeland/properties";
+    const requestedFolder =
+      typeof body?.folder === "string" ? body.folder.trim() : "";
+    const allowedFolders = new Set(["homeland/properties", "homeland/kyc"]);
+    const folder = allowedFolders.has(requestedFolder)
+      ? requestedFolder
+      : "homeland/properties";
 
     const timestamp = Math.floor(Date.now() / 1000);
     const signature = cloudinary.utils.api_sign_request(
