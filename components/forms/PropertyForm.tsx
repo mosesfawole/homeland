@@ -53,6 +53,8 @@ export default function PropertyForm({
   const selectedFeatures = watch("features") ?? [];
   // eslint-disable-next-line react-hooks/incompatible-library
   const images = watch("images") ?? [];
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const descriptionValue = watch("description") ?? "";
 
   const toggleFeature = (feature: string) => {
     const current = selectedFeatures;
@@ -108,8 +110,6 @@ export default function PropertyForm({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-      <AIDescriptionParser setValue={setValue} />
-
       {serverError && (
         <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">
           {serverError}
@@ -143,6 +143,8 @@ export default function PropertyForm({
             <p className={errorClass}>{errors.description.message}</p>
           )}
         </div>
+
+        <AIDescriptionParser setValue={setValue} description={descriptionValue} />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>

@@ -8,6 +8,8 @@ const anthropicClient = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
+export const runtime = "nodejs";
+
 const inputSchema = z.object({
   description: z.string().min(10, "Description too short").max(2000),
 });
@@ -167,51 +169,49 @@ async function callAnthropic(description: string) {
   return { ok: true, text } as const;
 }
 
-async function callOpenRouter(description: string) {
-  const rawKey = process.env.OPENROUTER_API_KEY;
-  const apiKey = rawKey?.trim().replace(/^Bearer\s+/i, "");
-  const model = process.env.OPENROUTER_MODEL?.trim();
-  const baseUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    process.env.NEXTAUTH_URL ??
-    "http://localhost:3000";
+async function callGemini(description: string) {
+  const apiKey =
+    process.env.GEMINI_API_KEY?.trim() ||
+    process.env.GOOGLE_API_KEY?.trim();
+  const model = process.env.GEMINI_MODEL?.trim() || "gemini-2.5-flash";
 
   if (!apiKey) {
     return {
       ok: false,
       status: 500,
-      message: "Missing OPENROUTER_API_KEY in environment.",
+      message: "Missing GEMINI_API_KEY in environment.",
     } as const;
   }
 
-  if (!model) {
-    return {
-      ok: false,
-      status: 500,
-      message: "Missing OPENROUTER_MODEL in environment.",
-    } as const;
-  }
-
-  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "HTTP-Referer": baseUrl,
-      "X-OpenRouter-Title": "Homeland",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model,
-      max_tokens: 1024,
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        {
-          role: "user",
-          content: `Parse this Nigerian property listing:\n\n"${description}"`,
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": apiKey,
+      },
+      body: JSON.stringify({
+        systemInstruction: {
+          parts: [{ text: SYSTEM_PROMPT }],
         },
-      ],
-    }),
-  });
+        contents: [
+          {
+            role: "user",
+            parts: [
+              {
+                text: `Parse this Nigerian property listing:\n\n"${description}"`,
+              },
+            ],
+          },
+        ],
+        generationConfig: {
+          temperature: 0.2,
+          maxOutputTokens: 1024,
+        },
+      }),
+    },
+  );
 
   const payload = await res.json().catch(() => ({}));
   if (!res.ok) {
@@ -219,39 +219,60 @@ async function callOpenRouter(description: string) {
       ok: false,
       status: res.status,
       message:
-        payload?.error?.message ??
-        "OpenRouter request failed. Please try again.",
+        payload?.error?.message ?? "Gemini request failed. Please try again.",
     } as const;
   }
 
-  const text = payload?.choices?.[0]?.message?.content ?? "";
+  const text =
+    payload?.candidates?.[0]?.content?.parts?.[0]?.text ??
+    payload?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text).join("") ??
+    "";
   return { ok: true, text } as const;
 }
 
 export async function POST(req: NextRequest) {
   try {
     const ip = getRequestIp(req);
-    const limit = await checkRateLimit(`ai-parse:${ip}`, 10, 60_000);
-    if (!limit.ok) {
-      return NextResponse.json(
-        { error: "Too many requests. Please slow down." },
-        {
-          status: 429,
-          headers: {
-            "Retry-After": String(Math.ceil((limit.resetAt - Date.now()) / 1000)),
+    const perMinute = Number(process.env.AI_RATE_LIMIT_PER_MIN ?? 60);
+    const windowMs = Number(process.env.AI_RATE_LIMIT_WINDOW_MS ?? 60_000);
+    if (perMinute > 0) {
+      const limit = await checkRateLimit(`ai-parse:${ip}`, perMinute, windowMs);
+      if (!limit.ok) {
+        if (process.env.NODE_ENV !== "production") {
+          console.info("[ai-parse] local rate limit hit", {
+            perMinute,
+            windowMs,
+          });
+        }
+        return NextResponse.json(
+          { error: "Too many requests. Please slow down.", source: "local" },
+          {
+            status: 429,
+            headers: {
+              "Retry-After": String(
+                Math.ceil((limit.resetAt - Date.now()) / 1000),
+              ),
+            },
           },
-        },
-      );
+        );
+      }
     }
 
-    // Only authenticated agents can use this endpoint
-    const session = await auth();
-    const role = session?.user?.role;
-    if (role !== "AGENT") {
-      return NextResponse.json(
-        { error: "Unauthorized. Only agents can use this feature." },
-        { status: 401 },
-      );
+    const devBypass =
+      process.env.NODE_ENV !== "production" &&
+      process.env.AI_PARSE_DEV_BYPASS === "1";
+    if (!devBypass) {
+      // Only authenticated agents can use this endpoint
+      const session = await auth();
+      const role = session?.user?.role;
+      if (role !== "AGENT") {
+        return NextResponse.json(
+          { error: "Unauthorized. Only agents can use this feature." },
+          { status: 401 },
+        );
+      }
+    } else if (process.env.NODE_ENV !== "production") {
+      console.info("[ai-parse] dev bypass enabled");
     }
 
     const body = await req.json();
@@ -266,13 +287,36 @@ export async function POST(req: NextRequest) {
 
     const { description } = parsed.data;
 
-    const provider = (process.env.AI_PROVIDER ?? "").toLowerCase();
-    const useOpenRouter =
-      provider === "openrouter" ||
-      (!!process.env.OPENROUTER_API_KEY && provider !== "anthropic");
+    const provider = (process.env.AI_PROVIDER ?? "").toLowerCase().trim();
+    const providerChoice =
+      provider ||
+      (process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY
+        ? "gemini"
+        : "") ||
+      "anthropic";
+    const isSupportedProvider =
+      providerChoice === "gemini" || providerChoice === "anthropic";
+    const useGemini = providerChoice === "gemini";
 
-    const aiResponse = useOpenRouter
-      ? await callOpenRouter(description)
+    if (process.env.NODE_ENV !== "production") {
+      console.info("[ai-parse] provider", {
+        provider: provider || "(auto)",
+        providerChoice,
+      });
+    }
+
+    if (provider && !isSupportedProvider) {
+      return NextResponse.json(
+        {
+          error:
+            "Unsupported AI provider. Set AI_PROVIDER to gemini or anthropic.",
+        },
+        { status: 400 },
+      );
+    }
+
+    const aiResponse = useGemini
+      ? await callGemini(description)
       : await callAnthropic(description);
 
     if (!aiResponse.ok) {
