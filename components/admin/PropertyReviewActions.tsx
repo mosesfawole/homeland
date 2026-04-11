@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 interface Props {
@@ -18,9 +18,26 @@ export default function PropertyReviewActions({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [toast, setToast] = useState<{
+    message: string;
+    tone: "success" | "error";
+  } | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isApproved = status === "ACTIVE";
   const isRejected = status === "REJECTED";
+
+  useEffect(() => {
+    return () => {
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+    };
+  }, []);
+
+  const showToast = (message: string, tone: "success" | "error") => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToast({ message, tone });
+    toastTimer.current = setTimeout(() => setToast(null), 2500);
+  };
 
   const updateStatus = async (status: "ACTIVE" | "REJECTED") => {
     setIsLoading(true);
@@ -36,9 +53,12 @@ export default function PropertyReviewActions({
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
         setError(json.error ?? "Failed to update property");
+        showToast(json.error ?? "Failed to update property", "error");
         return;
       }
-      setSuccess(status === "ACTIVE" ? "Approved" : "Rejected");
+      const message = status === "ACTIVE" ? "Approved" : "Rejected";
+      setSuccess(message);
+      showToast(`Listing ${message.toLowerCase()}.`, "success");
       router.refresh();
     } finally {
       setIsLoading(false);
@@ -59,9 +79,12 @@ export default function PropertyReviewActions({
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
         setError(json.error ?? "Failed to update property");
+        showToast(json.error ?? "Failed to update property", "error");
         return;
       }
-      setSuccess(!isFeatured ? "Featured" : "Unfeatured");
+      const message = !isFeatured ? "Featured" : "Unfeatured";
+      setSuccess(message);
+      showToast(`Listing ${message.toLowerCase()}.`, "success");
       router.refresh();
     } finally {
       setIsLoading(false);
@@ -100,6 +123,19 @@ export default function PropertyReviewActions({
       {error ? <span className="text-xs text-red-600">{error}</span> : null}
       {!isApproved ? (
         <span className="text-xs text-gray-500">Approve to feature</span>
+      ) : null}
+      {toast ? (
+        <div
+          role="status"
+          aria-live="polite"
+          className={`fixed bottom-6 right-6 z-50 rounded-lg px-4 py-2 text-xs font-semibold shadow-lg ${
+            toast.tone === "success"
+              ? "bg-emerald-600 text-white"
+              : "bg-red-600 text-white"
+          }`}
+        >
+          {toast.message}
+        </div>
       ) : null}
     </div>
   );

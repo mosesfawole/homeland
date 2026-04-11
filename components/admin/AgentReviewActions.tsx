@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 interface Props {
@@ -11,6 +11,23 @@ export default function AgentReviewActions({ agentProfileId }: Props) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<{
+    message: string;
+    tone: "success" | "error";
+  } | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+    };
+  }, []);
+
+  const showToast = (message: string, tone: "success" | "error") => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToast({ message, tone });
+    toastTimer.current = setTimeout(() => setToast(null), 2500);
+  };
 
   const updateStatus = async (status: "VERIFIED" | "REJECTED") => {
     setIsLoading(true);
@@ -25,8 +42,13 @@ export default function AgentReviewActions({ agentProfileId }: Props) {
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
         setError(json.error ?? "Failed to update agent");
+        showToast(json.error ?? "Failed to update agent", "error");
         return;
       }
+      showToast(
+        status === "VERIFIED" ? "Agent approved." : "Agent rejected.",
+        "success",
+      );
       router.refresh();
     } finally {
       setIsLoading(false);
@@ -52,6 +74,19 @@ export default function AgentReviewActions({ agentProfileId }: Props) {
         Reject
       </button>
       {error ? <span className="text-xs text-red-600">{error}</span> : null}
+      {toast ? (
+        <div
+          role="status"
+          aria-live="polite"
+          className={`fixed bottom-6 right-6 z-50 rounded-lg px-4 py-2 text-xs font-semibold shadow-lg ${
+            toast.tone === "success"
+              ? "bg-emerald-600 text-white"
+              : "bg-red-600 text-white"
+          }`}
+        >
+          {toast.message}
+        </div>
+      ) : null}
     </div>
   );
 }
