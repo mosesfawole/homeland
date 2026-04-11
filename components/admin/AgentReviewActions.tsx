@@ -5,9 +5,10 @@ import { useRouter } from "next/navigation";
 
 interface Props {
   agentProfileId: string;
+  status: string;
 }
 
-export default function AgentReviewActions({ agentProfileId }: Props) {
+export default function AgentReviewActions({ agentProfileId, status }: Props) {
   const tableKey = "agents";
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -29,6 +30,9 @@ export default function AgentReviewActions({ agentProfileId }: Props) {
     setToast({ message, tone });
     toastTimer.current = setTimeout(() => setToast(null), 2500);
   };
+
+  const isApproved = status === "VERIFIED";
+  const isRejected = status === "REJECTED";
 
   const scrollAfterAction = (triggerEl: HTMLElement | null) => {
     if (!triggerEl) return;
@@ -89,22 +93,25 @@ export default function AgentReviewActions({ agentProfileId }: Props) {
         onClick={(event) =>
           updateStatus("VERIFIED", event.currentTarget as HTMLElement)
         }
-        disabled={isLoading}
+        disabled={isLoading || isApproved}
         className="px-3 py-1.5 rounded-md border border-emerald-200 bg-emerald-50 text-emerald-700 font-semibold hover:bg-emerald-100 disabled:opacity-60 disabled:cursor-not-allowed"
       >
-        Approve
+        {isApproved ? "Approved" : "Approve"}
       </button>
       <button
         type="button"
         onClick={(event) =>
           updateStatus("REJECTED", event.currentTarget as HTMLElement)
         }
-        disabled={isLoading}
+        disabled={isLoading || isRejected}
         className="px-3 py-1.5 rounded-md border border-red-200 bg-red-50 text-red-700 font-semibold hover:bg-red-100 disabled:opacity-60 disabled:cursor-not-allowed"
       >
-        Reject
+        {isRejected ? "Rejected" : "Reject"}
       </button>
       {error ? <span className="text-xs text-red-600">{error}</span> : null}
+      {!isApproved && !isRejected ? (
+        <span className="text-xs text-gray-500">Pending review</span>
+      ) : null}
       {toast ? (
         <div
           role="status"
