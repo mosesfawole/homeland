@@ -147,7 +147,7 @@ export default async function AdminPropertiesPage({
             No properties found for this filter.
           </div>
         ) : (
-          <table className="w-full text-sm">
+          <table className="w-full text-sm" data-admin-table="properties">
             <thead className="bg-gray-50 text-gray-500">
               <tr>
                 <th className="text-left px-4 py-3 font-medium">Listing</th>
@@ -160,7 +160,11 @@ export default async function AdminPropertiesPage({
             </thead>
             <tbody>
               {propertyList.map((property) => (
-                <tr key={property.id} className="border-t border-gray-100">
+                <tr
+                  key={property.id}
+                  data-row-id={property.id}
+                  className="border-t border-gray-100"
+                >
                   <td className="px-4 py-3">
                     <div className="text-gray-900 font-medium">
                       {property.title}

@@ -51,7 +51,7 @@ export default async function AdminAgentsPage() {
             No agents found.
           </div>
         ) : (
-          <table className="w-full text-sm">
+            <table className="w-full text-sm" data-admin-table="agents">
             <thead className="bg-gray-50 text-gray-500">
               <tr>
                 <th className="text-left px-4 py-3 font-medium">Agent</th>
@@ -62,8 +62,12 @@ export default async function AdminAgentsPage() {
               </tr>
             </thead>
             <tbody>
-              {agentList.map((agent) => (
-                <tr key={agent.id} className="border-t border-gray-100">
+                {agentList.map((agent) => (
+                  <tr
+                    key={agent.id}
+                    data-row-id={agent.id}
+                    className="border-t border-gray-100"
+                  >
                   <td className="px-4 py-3">
                     <div className="text-gray-900 font-medium">
                       {agent.user?.name ?? "Agent"}

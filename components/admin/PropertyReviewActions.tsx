@@ -14,6 +14,7 @@ export default function PropertyReviewActions({
   isFeatured,
   status,
 }: Props) {
+  const tableKey = "properties";
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +40,32 @@ export default function PropertyReviewActions({
     toastTimer.current = setTimeout(() => setToast(null), 2500);
   };
 
-  const updateStatus = async (status: "ACTIVE" | "REJECTED") => {
+  const scrollAfterAction = (triggerEl: HTMLElement | null) => {
+    if (!triggerEl) return;
+    const row = triggerEl.closest("tr") as HTMLElement | null;
+    const nextRow = row?.nextElementSibling as HTMLElement | null;
+    const prevRow = row?.previousElementSibling as HTMLElement | null;
+    const targetId = nextRow?.dataset.rowId ?? prevRow?.dataset.rowId ?? null;
+
+    setTimeout(() => {
+      if (targetId) {
+        const target = document.querySelector(
+          `tr[data-row-id="${targetId}"]`,
+        ) as HTMLElement | null;
+        target?.scrollIntoView({ behavior: "smooth", block: "center" });
+        return;
+      }
+      const firstRow = document.querySelector(
+        `table[data-admin-table="${tableKey}"] tbody tr`,
+      ) as HTMLElement | null;
+      firstRow?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 300);
+  };
+
+  const updateStatus = async (
+    status: "ACTIVE" | "REJECTED",
+    triggerEl: HTMLElement | null,
+  ) => {
     setIsLoading(true);
     setError(null);
     setSuccess(null);
@@ -60,12 +86,13 @@ export default function PropertyReviewActions({
       setSuccess(message);
       showToast(`Listing ${message.toLowerCase()}.`, "success");
       router.refresh();
+      scrollAfterAction(triggerEl);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const toggleFeatured = async () => {
+  const toggleFeatured = async (triggerEl: HTMLElement | null) => {
     setIsLoading(true);
     setError(null);
     setSuccess(null);
@@ -86,6 +113,7 @@ export default function PropertyReviewActions({
       setSuccess(message);
       showToast(`Listing ${message.toLowerCase()}.`, "success");
       router.refresh();
+      scrollAfterAction(triggerEl);
     } finally {
       setIsLoading(false);
     }
@@ -95,7 +123,9 @@ export default function PropertyReviewActions({
     <div className="flex flex-wrap items-center gap-2 text-xs">
       <button
         type="button"
-        onClick={() => updateStatus("ACTIVE")}
+        onClick={(event) =>
+          updateStatus("ACTIVE", event.currentTarget as HTMLElement)
+        }
         disabled={isLoading || isApproved}
         className="px-3 py-1.5 rounded-md border border-emerald-200 bg-emerald-50 text-emerald-700 font-semibold hover:bg-emerald-100 disabled:opacity-60 disabled:cursor-not-allowed"
       >
@@ -103,7 +133,9 @@ export default function PropertyReviewActions({
       </button>
       <button
         type="button"
-        onClick={() => updateStatus("REJECTED")}
+        onClick={(event) =>
+          updateStatus("REJECTED", event.currentTarget as HTMLElement)
+        }
         disabled={isLoading || isRejected}
         className="px-3 py-1.5 rounded-md border border-red-200 bg-red-50 text-red-700 font-semibold hover:bg-red-100 disabled:opacity-60 disabled:cursor-not-allowed"
       >
@@ -111,7 +143,9 @@ export default function PropertyReviewActions({
       </button>
       <button
         type="button"
-        onClick={toggleFeatured}
+        onClick={(event) =>
+          toggleFeatured(event.currentTarget as HTMLElement)
+        }
         disabled={isLoading || !isApproved}
         className="px-3 py-1.5 rounded-md border border-blue-200 bg-blue-50 text-blue-700 font-semibold hover:bg-blue-100 disabled:opacity-60 disabled:cursor-not-allowed"
       >
