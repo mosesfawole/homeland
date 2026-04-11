@@ -11,7 +11,6 @@ export default function RegisterForm() {
   const router = useRouter();
   const [showPass, setShowPass] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   const {
     register,
@@ -24,7 +23,6 @@ export default function RegisterForm() {
 
   const onSubmit = async (data: RegisterInput) => {
     setServerError(null);
-    setSuccess(null);
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
@@ -38,10 +36,7 @@ export default function RegisterForm() {
         return;
       }
 
-      setSuccess("Account created. Check your email to verify before signing in.");
-      setTimeout(() => {
-        router.push("/login?pending=1");
-      }, 1200);
+      router.push("/login?pending=1");
     } catch {
       setServerError("Something went wrong. Please try again.");
     }
@@ -57,12 +52,6 @@ export default function RegisterForm() {
           {serverError}
         </div>
       )}
-      {success && (
-        <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm px-4 py-3 rounded-lg">
-          {success}
-        </div>
-      )}
-
       <div className="space-y-2">
         <label className="text-sm font-medium text-gray-700">I am a...</label>
         <div className="grid grid-cols-2 gap-3">
