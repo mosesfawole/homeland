@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import AdminSidebarNav from "@/components/layout/AdminSidebarNav";
+import Navbar from "@/components/layout/Navbar";
 
 export default async function AdminLayout({
   children,
@@ -23,7 +24,10 @@ export default async function AdminLayout({
             <AdminSidebarNav />
           </aside>
 
-          <main>{children}</main>
+          <main className="space-y-6">
+            <Navbar />
+            {children}
+          </main>
         </div>
       </div>
     </div>

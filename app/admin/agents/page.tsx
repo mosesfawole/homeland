@@ -28,7 +28,10 @@ export default async function AdminAgentsPage() {
     .order("createdAt", { ascending: false });
 
   if (error) {
-    console.error("[AdminAgentsPage] Failed to load agents", formatSupabaseError(error));
+    console.error(
+      "[AdminAgentsPage] Failed to load agents",
+      formatSupabaseError(error),
+    );
   }
 
   const agentList = agents ?? [];

@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import AgentSidebarNav from "@/components/layout/AgentSidebarNav";
+import Navbar from "@/components/layout/Navbar";
 
 export default async function AgentLayout({
   children,
@@ -23,7 +24,10 @@ export default async function AgentLayout({
             <AgentSidebarNav />
           </aside>
 
-          <main>{children}</main>
+          <main className="space-y-6">
+            <Navbar />
+            {children}
+          </main>
         </div>
       </div>
     </div>

@@ -1,7 +1,6 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
-
 export const metadata = {
   title: "Admin Overview - Homeland",
 };

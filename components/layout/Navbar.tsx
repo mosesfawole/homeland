@@ -74,6 +74,23 @@ export default async function Navbar() {
         </nav>
 
         <div className="flex items-center gap-3">
+          <details className="relative md:hidden">
+            <summary className="list-none cursor-pointer px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-700 hover:bg-gray-50">
+              Menu
+            </summary>
+            <div className="absolute right-0 mt-2 w-52 rounded-lg border border-gray-100 bg-white shadow-lg p-2 flex flex-col gap-1">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="px-3 py-2 rounded-md text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+          </details>
+
           {role === "AGENT" ? (
             <Link
               href="/agent/listings/new"

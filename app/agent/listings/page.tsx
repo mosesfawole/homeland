@@ -21,7 +21,10 @@ export default async function AgentListingsPage() {
     .maybeSingle();
 
   if (agentError) {
-    console.error("[AgentListingsPage] Failed to load agent profile", formatSupabaseError(agentError));
+    console.error(
+      "[AgentListingsPage] Failed to load agent profile",
+      formatSupabaseError(agentError),
+    );
   }
 
   if (!agentProfile) redirect("/agent/verification");
@@ -33,7 +36,10 @@ export default async function AgentListingsPage() {
     .order("createdAt", { ascending: false });
 
   if (listingsError) {
-    console.error("[AgentListingsPage] Failed to load listings", formatSupabaseError(listingsError));
+    console.error(
+      "[AgentListingsPage] Failed to load listings",
+      formatSupabaseError(listingsError),
+    );
   }
 
   const listingList = listings ?? [];
@@ -79,7 +85,7 @@ export default async function AgentListingsPage() {
                     <div className="font-medium text-gray-900">
                       {listing.title}
                     </div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-blue-500">
                       {listing.listingType === "RENT" ? "For Rent" : "For Sale"}
                     </div>
                   </td>
