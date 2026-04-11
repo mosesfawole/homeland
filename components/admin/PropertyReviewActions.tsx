@@ -6,20 +6,39 @@ import { useRouter } from "next/navigation";
 interface Props {
   propertyId: string;
   isFeatured: boolean;
+  status: string;
 }
 
-export default function PropertyReviewActions({ propertyId, isFeatured }: Props) {
+export default function PropertyReviewActions({
+  propertyId,
+  isFeatured,
+  status,
+}: Props) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  const isApproved = status === "ACTIVE";
+  const isRejected = status === "REJECTED";
 
   const updateStatus = async (status: "ACTIVE" | "REJECTED") => {
     setIsLoading(true);
+    setError(null);
+    setSuccess(null);
     try {
-      await fetch("/api/admin/verify-property", {
+      const res = await fetch("/api/admin/verify-property", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ propertyId, status }),
+        credentials: "include",
       });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(json.error ?? "Failed to update property");
+        return;
+      }
+      setSuccess(status === "ACTIVE" ? "Approved" : "Rejected");
       router.refresh();
     } finally {
       setIsLoading(false);
@@ -28,12 +47,21 @@ export default function PropertyReviewActions({ propertyId, isFeatured }: Props)
 
   const toggleFeatured = async () => {
     setIsLoading(true);
+    setError(null);
+    setSuccess(null);
     try {
-      await fetch("/api/admin/verify-property", {
+      const res = await fetch("/api/admin/verify-property", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ propertyId, isFeatured: !isFeatured }),
+        credentials: "include",
       });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(json.error ?? "Failed to update property");
+        return;
+      }
+      setSuccess(!isFeatured ? "Featured" : "Unfeatured");
       router.refresh();
     } finally {
       setIsLoading(false);
@@ -45,27 +73,34 @@ export default function PropertyReviewActions({ propertyId, isFeatured }: Props)
       <button
         type="button"
         onClick={() => updateStatus("ACTIVE")}
-        disabled={isLoading}
-        className="px-2 py-1 rounded-md bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+        disabled={isLoading || isApproved}
+        className="px-3 py-1.5 rounded-md border border-emerald-200 bg-emerald-50 text-emerald-700 font-semibold hover:bg-emerald-100 disabled:opacity-60 disabled:cursor-not-allowed"
       >
-        Approve
+        {isApproved ? "Approved" : "Approve"}
       </button>
       <button
         type="button"
         onClick={() => updateStatus("REJECTED")}
-        disabled={isLoading}
-        className="px-2 py-1 rounded-md bg-red-50 text-red-600 hover:bg-red-100"
+        disabled={isLoading || isRejected}
+        className="px-3 py-1.5 rounded-md border border-red-200 bg-red-50 text-red-700 font-semibold hover:bg-red-100 disabled:opacity-60 disabled:cursor-not-allowed"
       >
-        Reject
+        {isRejected ? "Rejected" : "Reject"}
       </button>
       <button
         type="button"
         onClick={toggleFeatured}
-        disabled={isLoading}
-        className="px-2 py-1 rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100"
+        disabled={isLoading || !isApproved}
+        className="px-3 py-1.5 rounded-md border border-blue-200 bg-blue-50 text-blue-700 font-semibold hover:bg-blue-100 disabled:opacity-60 disabled:cursor-not-allowed"
       >
         {isFeatured ? "Unfeature" : "Feature"}
       </button>
+      {success ? (
+        <span className="text-xs text-emerald-700">{success}</span>
+      ) : null}
+      {error ? <span className="text-xs text-red-600">{error}</span> : null}
+      {!isApproved ? (
+        <span className="text-xs text-gray-500">Approve to feature</span>
+      ) : null}
     </div>
   );
 }

@@ -10,15 +10,23 @@ interface Props {
 export default function AgentReviewActions({ agentProfileId }: Props) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const updateStatus = async (status: "VERIFIED" | "REJECTED") => {
     setIsLoading(true);
+    setError(null);
     try {
-      await fetch("/api/admin/verify-agent", {
+      const res = await fetch("/api/admin/verify-agent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ agentProfileId, status }),
+        credentials: "include",
       });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(json.error ?? "Failed to update agent");
+        return;
+      }
       router.refresh();
     } finally {
       setIsLoading(false);
@@ -26,12 +34,12 @@ export default function AgentReviewActions({ agentProfileId }: Props) {
   };
 
   return (
-    <div className="flex items-center gap-2 text-xs">
+    <div className="flex flex-wrap items-center gap-2 text-xs">
       <button
         type="button"
         onClick={() => updateStatus("VERIFIED")}
         disabled={isLoading}
-        className="px-2 py-1 rounded-md bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+        className="px-3 py-1.5 rounded-md border border-emerald-200 bg-emerald-50 text-emerald-700 font-semibold hover:bg-emerald-100 disabled:opacity-60 disabled:cursor-not-allowed"
       >
         Approve
       </button>
@@ -39,10 +47,11 @@ export default function AgentReviewActions({ agentProfileId }: Props) {
         type="button"
         onClick={() => updateStatus("REJECTED")}
         disabled={isLoading}
-        className="px-2 py-1 rounded-md bg-red-50 text-red-600 hover:bg-red-100"
+        className="px-3 py-1.5 rounded-md border border-red-200 bg-red-50 text-red-700 font-semibold hover:bg-red-100 disabled:opacity-60 disabled:cursor-not-allowed"
       >
         Reject
       </button>
+      {error ? <span className="text-xs text-red-600">{error}</span> : null}
     </div>
   );
 }

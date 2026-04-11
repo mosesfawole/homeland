@@ -1,12 +1,13 @@
 ﻿import Image from "next/image";
 import Link from "next/link";
-import { MapPin, BedDouble, Bath, BadgeCheck } from "lucide-react";
+import { MapPin, BedDouble, Home, BadgeCheck } from "lucide-react";
 import {
   formatPrice,
   formatRentDuration,
   timeAgo,
   truncate,
 } from "@/lib/utils/format";
+import { PROPERTY_TYPE_LABELS } from "@/lib/validations/property";
 
 export interface PropertyCardData {
   id: string;
@@ -108,7 +109,8 @@ export default function PropertyCard({ property }: Props) {
             <BedDouble size={14} /> {property.bedrooms} bed
           </span>
           <span className="inline-flex items-center gap-1">
-            <Bath size={14} /> {property.bathrooms ?? 0} bath
+            <Home size={14} />{" "}
+            {PROPERTY_TYPE_LABELS[property.propertyType] ?? property.propertyType}
           </span>
         </div>
 
