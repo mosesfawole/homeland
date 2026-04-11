@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import AgentReviewActions from "@/components/admin/AgentReviewActions";
+import AgentBulkActions from "@/components/admin/AgentBulkActions";
 import { timeAgo } from "@/lib/utils/format";
 import { formatSupabaseError, getSupabaseAdmin } from "@/lib/supabase-server";
 import Link from "next/link";
@@ -85,6 +86,7 @@ export default async function AdminAgentsPage({
     if (status === "VERIFIED") return "APPROVED";
     return status;
   };
+  const isPendingTab = tab === "pending";
 
   return (
     <div className="space-y-6">
@@ -95,6 +97,7 @@ export default async function AdminAgentsPage({
         </p>
       </div>
 
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2">
           {tabs.map((item) => {
             const isActive = tab === item.key || (tab === "pending" && item.key === "pending");
@@ -122,6 +125,11 @@ export default async function AdminAgentsPage({
             );
           })}
         </div>
+        <AgentBulkActions
+          pendingCount={pendingCount.count ?? 0}
+          isPendingTab={isPendingTab}
+        />
+      </div>
 
         <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
           {agentList.length === 0 ? (
