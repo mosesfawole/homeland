@@ -78,7 +78,12 @@ export default async function EditListingPage({ params }: PageProps) {
           state: property.state,
           neighborhood: property.neighborhood,
           images: (Array.isArray(property.images) ? property.images : []).map(
-            (image) => ({
+            (image: {
+              url: string;
+              publicId: string;
+              isPrimary?: boolean;
+              order?: number;
+            }) => ({
               url: image.url,
               publicId: image.publicId,
               isPrimary: image.isPrimary,

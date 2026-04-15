@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { formatSupabaseError, getSupabaseAdmin } from "@/lib/supabase-server";
+import { isSameOrigin } from "@/lib/security";
 
-export async function POST(_req: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
+    if (!isSameOrigin(req)) {
+      return NextResponse.json({ error: "Invalid request origin" }, { status: 403 });
+    }
     const session = await auth();
     if (!session || session.user.role !== "ADMIN") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

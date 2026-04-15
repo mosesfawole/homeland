@@ -12,6 +12,10 @@ interface CloudinarySignature {
   signature: string;
   timestamp: number;
   folder: string;
+  allowedFormats: string[];
+  maxFileSize: number;
+  resourceType: string;
+  uploadType: string;
   apiKey: string;
   cloudName: string;
 }
@@ -41,8 +45,11 @@ async function uploadToCloudinary(
   formData.append("timestamp", String(signature.timestamp));
   formData.append("signature", signature.signature);
   formData.append("folder", signature.folder);
+  formData.append("allowed_formats", signature.allowedFormats.join(","));
+  formData.append("max_file_size", String(signature.maxFileSize));
+  formData.append("type", signature.uploadType);
 
-  const uploadUrl = `https://api.cloudinary.com/v1_1/${signature.cloudName}/image/upload`;
+  const uploadUrl = `https://api.cloudinary.com/v1_1/${signature.cloudName}/${signature.resourceType}/upload`;
   const res = await fetch(uploadUrl, { method: "POST", body: formData });
   const json = await res.json();
 
@@ -50,7 +57,7 @@ async function uploadToCloudinary(
     throw new Error(json?.error?.message ?? "Upload failed");
   }
 
-  return json.secure_url as string;
+  return (json.public_id as string) ?? (json.secure_url as string);
 }
 
 export default function KycForm({
@@ -72,6 +79,10 @@ export default function KycForm({
     setter: (url: string) => void,
   ) => {
     setError(null);
+    if (file.size > 6 * 1024 * 1024) {
+      setError("Each document must be under 6MB.");
+      return;
+    }
     const signature = await requestSignature();
     const url = await uploadToCloudinary(file, signature);
     setter(url);

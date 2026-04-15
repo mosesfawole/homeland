@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import UserSidebarNav from "@/components/layout/UserSidebarNav";
 import Navbar from "@/components/layout/Navbar";
+import { getCallbackUrl } from "@/lib/utils/request";
 
 export default async function UserLayout({
   children,
@@ -9,8 +10,12 @@ export default async function UserLayout({
   children: React.ReactNode;
 }) {
   const session = await auth();
-  if (!session || session.user.role !== "USER") {
-    redirect("/login");
+  if (!session) {
+    const callbackUrl = await getCallbackUrl("/user/dashboard");
+    redirect(`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+  }
+  if (session.user.role !== "USER") {
+    redirect("/forbidden");
   }
 
   return (

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { v2 as cloudinary } from "cloudinary";
-import { getRequestIp, checkRateLimit } from "@/lib/security";
+import { getRequestIp, checkRateLimit, isSameOrigin } from "@/lib/security";
 
 export const runtime = "nodejs";
 
@@ -13,6 +13,9 @@ cloudinary.config({
 
 export async function POST(req: NextRequest) {
   try {
+    if (!isSameOrigin(req)) {
+      return NextResponse.json({ error: "Invalid request origin" }, { status: 403 });
+    }
     const ip = getRequestIp(req);
     const limit = await checkRateLimit(`upload-signature:${ip}`, 20, 60_000);
     if (!limit.ok) {
@@ -51,9 +54,21 @@ export async function POST(req: NextRequest) {
       ? requestedFolder
       : "homeland/properties";
 
+    const allowedFormats =
+      folder === "homeland/kyc"
+        ? ["jpg", "jpeg", "png"]
+        : ["jpg", "jpeg", "png", "webp"];
+    const maxFileSize = folder === "homeland/kyc" ? 6 * 1024 * 1024 : 8 * 1024 * 1024;
+    const uploadType = folder === "homeland/kyc" ? "private" : "upload";
     const timestamp = Math.floor(Date.now() / 1000);
     const signature = cloudinary.utils.api_sign_request(
-      { timestamp, folder },
+      {
+        timestamp,
+        folder,
+        allowed_formats: allowedFormats.join(","),
+        max_file_size: maxFileSize,
+        type: uploadType,
+      },
       apiSecret,
     );
 
@@ -61,6 +76,10 @@ export async function POST(req: NextRequest) {
       signature,
       timestamp,
       folder,
+      allowedFormats,
+      maxFileSize,
+      resourceType: "image",
+      uploadType,
       apiKey,
       cloudName,
     });

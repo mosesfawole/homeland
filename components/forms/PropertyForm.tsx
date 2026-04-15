@@ -1,5 +1,5 @@
 "use client";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -7,6 +7,7 @@ import { Loader2, Plus, X } from "lucide-react";
 import {
   propertySchema,
   type PropertyFormInput,
+  type PropertyFormValues,
   PROPERTY_TYPE_LABELS,
   NIGERIAN_STATES,
   COMMON_FEATURES,
@@ -15,7 +16,7 @@ import AIDescriptionParser from "@/components/property/AIDescriptionParser";
 import PropertyImages from "@/components/property/PropertyImages";
 
 interface Props {
-  defaultValues?: Partial<PropertyFormInput>;
+  defaultValues?: Partial<PropertyFormValues>;
   propertyId?: string; // if editing existing
   mode?: "create" | "edit";
 }
@@ -32,10 +33,10 @@ export default function PropertyForm({
   const {
     register,
     handleSubmit,
+    control,
     setValue,
-    watch,
     formState: { errors, isSubmitting },
-  } = useForm<PropertyFormInput>({
+  } = useForm<PropertyFormValues, unknown, PropertyFormInput>({
     resolver: zodResolver(propertySchema),
     defaultValues: {
       features: [],
@@ -47,14 +48,10 @@ export default function PropertyForm({
     },
   });
 
-  // eslint-disable-next-line react-hooks/incompatible-library
-  const listingType = watch("listingType");
-  // eslint-disable-next-line react-hooks/incompatible-library
-  const selectedFeatures = watch("features") ?? [];
-  // eslint-disable-next-line react-hooks/incompatible-library
-  const images = watch("images") ?? [];
-  // eslint-disable-next-line react-hooks/incompatible-library
-  const descriptionValue = watch("description") ?? "";
+  const listingType = useWatch({ control, name: "listingType" });
+  const selectedFeatures = useWatch({ control, name: "features" }) ?? [];
+  const images = useWatch({ control, name: "images" }) ?? [];
+  const descriptionValue = useWatch({ control, name: "description" }) ?? "";
 
   const toggleFeature = (feature: string) => {
     const current = selectedFeatures;

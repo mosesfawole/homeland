@@ -3,11 +3,19 @@ import { useEffect, useState } from "react";
 import { UseFormSetValue } from "react-hook-form";
 import { Sparkles, Loader2, AlertCircle, CheckCircle2, X } from "lucide-react";
 import { useAIParser } from "@/hooks/useAIParser";
-import type { PropertyFormInput } from "@/lib/validations/property";
+import {
+  LISTING_TYPES,
+  PROPERTY_TYPES,
+  RENT_DURATIONS,
+  type ListingType,
+  type PropertyType,
+  type RentDuration,
+} from "@/lib/db-types";
+import type { PropertyFormValues } from "@/lib/validations/property";
 
 interface Props {
   // We pass setValue from the parent form so AI can populate fields directly
-  setValue: UseFormSetValue<PropertyFormInput>;
+  setValue: UseFormSetValue<PropertyFormValues>;
   description: string;
   onParsed?: () => void; // optional callback after successful parse
 }
@@ -35,24 +43,36 @@ export default function AIDescriptionParser({
     const result = await parse(trimmed);
     if (!result) return;
 
+    const propertyType = PROPERTY_TYPES.find(
+      (value) => value === result.propertyType,
+    );
+    const listingType = LISTING_TYPES.find(
+      (value) => value === result.listingType,
+    );
+    const rentDurationValue = result.rentDuration?.toUpperCase();
+    const rentDuration = RENT_DURATIONS.find(
+      (value) => value === rentDurationValue,
+    );
+
     // Populate form fields with AI result
     // Only set fields that were actually extracted (non-null)
     if (result.title) setValue("title", result.title, { shouldValidate: true });
-    if (result.propertyType)
-      setValue("propertyType", result.propertyType as any, {
+    if (propertyType)
+      setValue("propertyType", propertyType as PropertyType, {
         shouldValidate: true,
       });
-    if (result.listingType)
-      setValue("listingType", result.listingType as any, {
+    if (listingType)
+      setValue("listingType", listingType as ListingType, {
         shouldValidate: true,
       });
-    if (result.bedrooms)
+    if (result.bedrooms !== null)
       setValue("bedrooms", result.bedrooms, { shouldValidate: true });
-    if (result.bathrooms)
+    if (result.bathrooms !== null)
       setValue("bathrooms", result.bathrooms, { shouldValidate: true });
-    if (result.price) setValue("price", result.price, { shouldValidate: true });
-    if (result.rentDuration)
-      setValue("rentDuration", result.rentDuration.toUpperCase() as any, {
+    if (result.price !== null)
+      setValue("price", result.price, { shouldValidate: true });
+    if (rentDuration)
+      setValue("rentDuration", rentDuration as RentDuration, {
         shouldValidate: true,
       });
     if (result.features?.length)
@@ -61,10 +81,9 @@ export default function AIDescriptionParser({
       setValue("address", result.location, { shouldValidate: true });
 
     // Handle location breakdown
-    if ((result as any).city) setValue("city", (result as any).city);
-    if ((result as any).state) setValue("state", (result as any).state);
-    if ((result as any).neighborhood)
-      setValue("neighborhood", (result as any).neighborhood);
+    if (result.city) setValue("city", result.city);
+    if (result.state) setValue("state", result.state);
+    if (result.neighborhood) setValue("neighborhood", result.neighborhood);
 
     // Mark form as AI-populated for backend tracking
     setValue("aiParsed", true);

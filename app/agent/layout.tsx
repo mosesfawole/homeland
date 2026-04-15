@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import AgentSidebarNav from "@/components/layout/AgentSidebarNav";
 import Navbar from "@/components/layout/Navbar";
+import { getCallbackUrl } from "@/lib/utils/request";
 
 export default async function AgentLayout({
   children,
@@ -9,8 +10,12 @@ export default async function AgentLayout({
   children: React.ReactNode;
 }) {
   const session = await auth();
-  if (!session || session.user.role !== "AGENT") {
-    redirect("/login");
+  if (!session) {
+    const callbackUrl = await getCallbackUrl("/agent/dashboard");
+    redirect(`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+  }
+  if (session.user.role !== "AGENT") {
+    redirect("/forbidden");
   }
 
   return (

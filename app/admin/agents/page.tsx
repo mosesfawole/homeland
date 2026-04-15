@@ -5,12 +5,39 @@ import AgentBulkActions from "@/components/admin/AgentBulkActions";
 import { timeAgo } from "@/lib/utils/format";
 import { formatSupabaseError, getSupabaseAdmin } from "@/lib/supabase-server";
 import Link from "next/link";
+import { v2 as cloudinary } from "cloudinary";
 
 export const metadata = {
   title: "Agents - Homeland",
 };
 
 type SearchParams = Record<string, string | string[] | undefined>;
+
+const cloudinaryEnabled = Boolean(
+  process.env.CLOUDINARY_CLOUD_NAME &&
+    process.env.CLOUDINARY_API_KEY &&
+    process.env.CLOUDINARY_API_SECRET,
+);
+
+if (cloudinaryEnabled) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
+}
+
+const signKycUrl = (value: string | null) => {
+  if (!value) return null;
+  if (value.startsWith("http")) return value;
+  if (!cloudinaryEnabled) return null;
+  return cloudinary.url(value, {
+    type: "private",
+    secure: true,
+    sign_url: true,
+    resource_type: "image",
+  });
+};
 
 export default async function AdminAgentsPage({
   searchParams,
@@ -148,7 +175,13 @@ export default async function AdminAgentsPage({
               </tr>
             </thead>
             <tbody>
-                {agentList.map((agent) => (
+                {agentList.map((agent) => {
+                  const govIdLink = signKycUrl(agent.govIdUrl ?? null);
+                  const cacDocLink = signKycUrl(agent.cacDocUrl ?? null);
+                  const agentUser = (Array.isArray(agent.user)
+                    ? agent.user[0]
+                    : agent.user) as { name?: string | null; email?: string | null } | null;
+                  return (
                   <tr
                     key={agent.id}
                     data-row-id={agent.id}
@@ -156,10 +189,10 @@ export default async function AdminAgentsPage({
                   >
                   <td className="px-4 py-3">
                     <div className="text-gray-900 font-medium">
-                      {agent.user?.name ?? "Agent"}
+                      {agentUser?.name ?? "Agent"}
                     </div>
                     <div className="text-xs text-gray-500">
-                      {agent.user?.email ?? "-"}
+                      {agentUser?.email ?? "-"}
                     </div>
                   </td>
                     <td className="px-4 py-3">
@@ -169,9 +202,9 @@ export default async function AdminAgentsPage({
                     </td>
                   <td className="px-4 py-3 text-xs text-gray-600">
                     <div className="flex flex-col gap-1">
-                      {agent.govIdUrl ? (
+                      {govIdLink ? (
                         <a
-                          href={agent.govIdUrl}
+                          href={govIdLink}
                           target="_blank"
                           rel="noreferrer"
                           className="text-blue-600 hover:underline"
@@ -181,9 +214,9 @@ export default async function AdminAgentsPage({
                       ) : (
                         <span className="text-gray-400">No ID</span>
                       )}
-                      {agent.cacDocUrl ? (
+                      {cacDocLink ? (
                         <a
-                          href={agent.cacDocUrl}
+                          href={cacDocLink}
                           target="_blank"
                           rel="noreferrer"
                           className="text-blue-600 hover:underline"
@@ -205,7 +238,8 @@ export default async function AdminAgentsPage({
                       />
                     </td>
                 </tr>
-              ))}
+              );
+              })}
             </tbody>
           </table>
         )}

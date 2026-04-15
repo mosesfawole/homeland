@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { formatPrice, timeAgo } from "@/lib/utils/format";
 import PropertyReviewActions from "@/components/admin/PropertyReviewActions";
 import { formatSupabaseError, getSupabaseAdmin } from "@/lib/supabase-server";
+import { unwrapRelation, type RelationValue } from "@/lib/utils/helpers";
 import Link from "next/link";
 
 export const metadata = {
@@ -10,6 +11,16 @@ export const metadata = {
 };
 
 type SearchParams = Record<string, string | string[] | undefined>;
+
+type AgentUserSummary = {
+  name?: string | null;
+  email?: string | null;
+};
+
+type PropertyAgentProfile = {
+  agencyName?: string | null;
+  user: RelationValue<AgentUserSummary>;
+};
 
 export default async function AdminPropertiesPage({
   searchParams,
@@ -159,7 +170,12 @@ export default async function AdminPropertiesPage({
               </tr>
             </thead>
             <tbody>
-              {propertyList.map((property) => (
+              {propertyList.map((property) => {
+                const agent = unwrapRelation(
+                  property.agentProfile as RelationValue<PropertyAgentProfile>,
+                );
+                const agentUser = unwrapRelation(agent?.user);
+                return (
                 <tr
                   key={property.id}
                   data-row-id={property.id}
@@ -174,9 +190,9 @@ export default async function AdminPropertiesPage({
                     </div>
                   </td>
                   <td className="px-4 py-3 text-gray-600">
-                    {property.agentProfile?.agencyName ||
-                      property.agentProfile?.user?.name ||
-                      property.agentProfile?.user?.email ||
+                    {agent?.agencyName ||
+                      agentUser?.name ||
+                      agentUser?.email ||
                       "Agent"}
                   </td>
                   <td className="px-4 py-3">
@@ -198,7 +214,8 @@ export default async function AdminPropertiesPage({
                     />
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         )}

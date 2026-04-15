@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { z } from "zod";
 import { formatSupabaseError, getSupabaseAdmin } from "@/lib/supabase-server";
+import { isSameOrigin } from "@/lib/security";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -12,6 +13,9 @@ const reportSchema = z.object({
 
 export async function POST(req: NextRequest, { params }: Params) {
   try {
+    if (!isSameOrigin(req)) {
+      return NextResponse.json({ error: "Invalid request origin" }, { status: 403 });
+    }
     const session = await auth();
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -21,7 +25,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     const parsed = reportSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
-        { error: parsed.error.errors[0].message },
+        { error: parsed.error.issues[0].message },
         { status: 400 },
       );
     }

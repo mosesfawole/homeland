@@ -3,6 +3,18 @@ import PropertyCard, { type PropertyCardData } from "@/components/property/Prope
 import HeroSearch from "@/components/layout/HeroSearch";
 import { ShieldCheck, Sparkles, MapPin, CalendarCheck } from "lucide-react";
 import { formatSupabaseError, getSupabaseAdmin } from "@/lib/supabase-server";
+import { unwrapRelation, type RelationValue } from "@/lib/utils/helpers";
+
+type AgentUserSummary = {
+  name: string | null;
+  avatar: string | null;
+};
+
+type LandingAgentProfile = {
+  agencyName: string | null;
+  verificationStatus: string;
+  user: RelationValue<AgentUserSummary>;
+};
 
 export const metadata = {
   title: "Homeland - Verified Nigerian Properties",
@@ -74,9 +86,21 @@ export default async function LandingPage() {
       const images = Array.isArray(property.images) ? property.images : [];
       const primary =
         images.find((img: { isPrimary?: boolean }) => img.isPrimary) ?? images[0];
+      const agent = unwrapRelation(
+        property.agentProfile as RelationValue<LandingAgentProfile>,
+      );
+      const agentUser = unwrapRelation(agent?.user);
       return {
         ...property,
         images: primary ? [{ url: primary.url }] : [],
+        agentProfile: {
+          agencyName: agent?.agencyName ?? null,
+          verificationStatus: agent?.verificationStatus ?? "",
+          user: {
+            name: agentUser?.name ?? null,
+            avatar: agentUser?.avatar ?? null,
+          },
+        },
       } as PropertyCardData;
     });
 

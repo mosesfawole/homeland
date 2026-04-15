@@ -19,6 +19,7 @@ export default function AgentCard({
 }: AgentCardProps) {
   const displayName = agencyName || user.name || "Verified Agent";
   const isVerified = verificationStatus === "VERIFIED";
+  const hasContact = Boolean(user.phone || user.email);
 
   return (
     <aside className="bg-white border border-gray-100 rounded-xl p-5 space-y-4">
@@ -49,14 +50,22 @@ export default function AgentCard({
       </div>
 
       <div className="space-y-2 text-sm text-gray-600">
-        {user.phone && (
-          <p className="flex items-center gap-2">
-            <Phone size={14} /> {user.phone}
-          </p>
-        )}
-        {user.email && (
-          <p className="flex items-center gap-2">
-            <Mail size={14} /> {user.email}
+        {hasContact ? (
+          <>
+            {user.phone && (
+              <p className="flex items-center gap-2">
+                <Phone size={14} /> {user.phone}
+              </p>
+            )}
+            {user.email && (
+              <p className="flex items-center gap-2">
+                <Mail size={14} /> {user.email}
+              </p>
+            )}
+          </>
+        ) : (
+          <p className="text-xs text-gray-500">
+            Contact this agent via a booking request.
           </p>
         )}
       </div>

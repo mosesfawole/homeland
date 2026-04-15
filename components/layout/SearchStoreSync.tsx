@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useSearchStore, type SearchFiltersValues } from "@/store/useSearchStore";
 
-interface Props extends SearchFiltersValues {}
+type Props = SearchFiltersValues;
 
 export default function SearchStoreSync({
   query,

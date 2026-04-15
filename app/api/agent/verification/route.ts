@@ -2,14 +2,26 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { formatSupabaseError, getSupabaseAdmin } from "@/lib/supabase-server";
+import { isSameOrigin } from "@/lib/security";
+
+const publicIdSchema = z
+  .string()
+  .min(3)
+  .max(200)
+  .regex(/^[\w\-\/]+(\.[\w]+)?$/, "Invalid document reference");
+
+const docSchema = z.union([z.string().url(), publicIdSchema]);
 
 const verificationSchema = z.object({
-  govIdUrl: z.string().url().optional(),
-  cacDocUrl: z.string().url().optional(),
+  govIdUrl: docSchema.optional(),
+  cacDocUrl: docSchema.optional(),
 });
 
 export async function POST(req: NextRequest) {
   try {
+    if (!isSameOrigin(req)) {
+      return NextResponse.json({ error: "Invalid request origin" }, { status: 403 });
+    }
     const session = await auth();
     if (!session || session.user.role !== "AGENT") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -20,7 +32,13 @@ export async function POST(req: NextRequest) {
 
     if (!parsed.success) {
       return NextResponse.json(
-        { error: parsed.error.errors[0].message },
+        { error: parsed.error.issues[0].message },
+        { status: 400 },
+      );
+    }
+    if (!parsed.data.govIdUrl && !parsed.data.cacDocUrl) {
+      return NextResponse.json(
+        { error: "Please upload at least one document." },
         { status: 400 },
       );
     }

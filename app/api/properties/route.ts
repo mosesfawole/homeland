@@ -4,6 +4,7 @@ import { propertySchema } from "@/lib/validations/property";
 import { parsePagination, buildPropertyFilters } from "@/lib/utils/helpers";
 import { LISTING_TYPES, PROPERTY_TYPES, type PropertyStatus } from "@/lib/db-types";
 import { formatSupabaseError, getSupabaseAdmin } from "@/lib/supabase-server";
+import { isSameOrigin } from "@/lib/security";
 
 // ── GET /api/properties ──────────────────────────────────────────
 // Public — search and filter active listings
@@ -141,6 +142,9 @@ export async function GET(req: NextRequest) {
 // Agent only — create a new listing
 export async function POST(req: NextRequest) {
   try {
+    if (!isSameOrigin(req)) {
+      return NextResponse.json({ error: "Invalid request origin" }, { status: 403 });
+    }
     const session = await auth();
 
     if (session?.user?.role !== "AGENT") {
@@ -153,7 +157,7 @@ export async function POST(req: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json(
         {
-          error: parsed.error.errors[0].message,
+          error: parsed.error.issues[0].message,
           fields: parsed.error.flatten().fieldErrors,
         },
         { status: 400 },

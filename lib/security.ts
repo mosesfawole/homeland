@@ -1,4 +1,3 @@
-import type { NextRequest } from "next/server";
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 
@@ -65,13 +64,59 @@ function inMemoryRateLimit(
   return { ok: true, remaining: limit - existing.count, resetAt: existing.resetAt };
 }
 
-export function getRequestIp(req: NextRequest): string {
+type RequestLike = {
+  headers: Headers;
+  nextUrl?: { origin: string };
+};
+
+export function getRequestIp(req: RequestLike): string {
   const forwarded = req.headers.get("x-forwarded-for");
   if (forwarded) {
     const [first] = forwarded.split(",");
     if (first) return first.trim();
   }
   return req.headers.get("x-real-ip") ?? "unknown";
+}
+
+function getAllowedOrigins(req: RequestLike): Set<string> {
+  const allowed = new Set<string>();
+  const addOrigin = (value?: string | null) => {
+    if (!value) return;
+    try {
+      const origin = new URL(value).origin;
+      if (origin) allowed.add(origin);
+    } catch {
+      // ignore invalid url
+    }
+  };
+
+  if (req.nextUrl?.origin) {
+    allowed.add(req.nextUrl.origin);
+  }
+
+  addOrigin(process.env.NEXTAUTH_URL);
+  addOrigin(process.env.NEXT_PUBLIC_SITE_URL);
+  addOrigin(process.env.APP_ORIGIN);
+
+  return allowed;
+}
+
+export function isSameOrigin(req: RequestLike): boolean {
+  const originHeader = req.headers.get("origin");
+  const refererHeader = req.headers.get("referer");
+  const source = originHeader ?? refererHeader;
+
+  if (!source) {
+    return process.env.NODE_ENV !== "production";
+  }
+
+  try {
+    const origin = new URL(source).origin;
+    const allowed = getAllowedOrigins(req);
+    return allowed.has(origin);
+  } catch {
+    return false;
+  }
 }
 
 export async function checkRateLimit(

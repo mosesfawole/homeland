@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -12,8 +12,20 @@ export default function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "";
+  const safeCallbackUrl = useMemo(() => {
+    if (!callbackUrl) return "";
+    try {
+      const url = new URL(callbackUrl, window.location.origin);
+      return url.origin === window.location.origin
+        ? `${url.pathname}${url.search}${url.hash}`
+        : "";
+    } catch {
+      return "";
+    }
+  }, [callbackUrl]);
   const verified = searchParams.get("verified");
   const pending = searchParams.get("pending");
+  const reset = searchParams.get("reset");
   const [showPass, setShowPass] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
@@ -33,8 +45,11 @@ export default function LoginForm() {
       });
 
       if (result?.error) {
-        if (result.error.toLowerCase().includes("emailnotverified")) {
+        const errorText = result.error.toLowerCase();
+        if (errorText.includes("emailnotverified")) {
           setAuthError("Please verify your email before signing in.");
+        } else if (errorText.includes("ratelimited")) {
+          setAuthError("Too many login attempts. Please try again shortly.");
         } else {
           setAuthError("Invalid email or password");
         }
@@ -45,8 +60,8 @@ export default function LoginForm() {
       const session = await res.json();
       const role = session?.user?.role;
 
-      if (callbackUrl) {
-        router.push(callbackUrl);
+      if (safeCallbackUrl) {
+        router.push(safeCallbackUrl);
       } else if (role === "ADMIN") {
         router.push("/admin/dashboard");
       } else if (role === "AGENT") {
@@ -82,6 +97,11 @@ export default function LoginForm() {
       {pending === "1" && (
         <div className="bg-blue-50 border border-blue-200 text-blue-700 text-sm px-4 py-3 rounded-lg">
           Check your email to verify your account before signing in.
+        </div>
+      )}
+      {reset === "1" && (
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm px-4 py-3 rounded-lg">
+          Password updated. You can sign in now.
         </div>
       )}
 
@@ -138,6 +158,15 @@ export default function LoginForm() {
           className="text-blue-600 hover:underline font-medium"
         >
           Create one
+        </Link>
+      </p>
+      <p className="text-center text-sm text-gray-500">
+        Forgot your password?{" "}
+        <Link
+          href="/forgot-password"
+          className="text-blue-600 hover:underline font-medium"
+        >
+          Reset it
         </Link>
       </p>
     </form>

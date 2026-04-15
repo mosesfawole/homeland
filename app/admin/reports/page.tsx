@@ -2,9 +2,19 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { timeAgo } from "@/lib/utils/format";
 import { formatSupabaseError, getSupabaseAdmin } from "@/lib/supabase-server";
+import { unwrapRelation, type RelationValue } from "@/lib/utils/helpers";
 
 export const metadata = {
   title: "Reports - Homeland",
+};
+
+type ReportedProperty = {
+  title?: string | null;
+};
+
+type ReportUser = {
+  name?: string | null;
+  email?: string | null;
 };
 
 export default async function AdminReportsPage() {
@@ -58,13 +68,20 @@ export default async function AdminReportsPage() {
               </tr>
             </thead>
             <tbody>
-              {reportList.map((report) => (
+              {reportList.map((report) => {
+                const property = unwrapRelation(
+                  report.property as RelationValue<ReportedProperty>,
+                );
+                const user = unwrapRelation(
+                  report.user as RelationValue<ReportUser>,
+                );
+                return (
                 <tr key={report.id} className="border-t border-gray-100">
                   <td className="px-4 py-3 text-gray-900">
-                    {report.property?.title ?? "-"}
+                    {property?.title ?? "-"}
                   </td>
                   <td className="px-4 py-3 text-gray-600">
-                    {report.user?.name ?? report.user?.email ?? "-"}
+                    {user?.name ?? user?.email ?? "-"}
                   </td>
                   <td className="px-4 py-3 text-gray-600">
                     {report.reason}
@@ -76,7 +93,8 @@ export default async function AdminReportsPage() {
                     {timeAgo(report.createdAt)}
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         )}

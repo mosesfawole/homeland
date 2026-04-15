@@ -3,6 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
+import { checkRateLimit, getRequestIp } from "@/lib/security";
 
 // Install: npm install bcryptjs @types/bcryptjs
 
@@ -29,11 +30,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "Password", type: "password" },
       },
 
-      async authorize(credentials) {
+      async authorize(credentials, request) {
         const parsed = loginSchema.safeParse(credentials);
         if (!parsed.success) return null;
 
         const { email, password } = parsed.data;
+        const ip = getRequestIp(request);
+        const limit = await checkRateLimit(
+          `login:${ip}:${email.toLowerCase()}`,
+          10,
+          60_000,
+        );
+        if (!limit.ok) {
+          throw new Error("RateLimited");
+        }
         const supabase = getSupabaseAdmin();
         const devBypassEmailVerification =
           process.env.NODE_ENV !== "production" &&
@@ -97,7 +107,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async session({ session, token }) {
       if (token) {
         session.user.id = token.id as string;
-        session.user.role = token.role as string;
+        if (token.role === "USER" || token.role === "AGENT" || token.role === "ADMIN") {
+          session.user.role = token.role;
+        }
         session.user.agentProfileId = token.agentProfileId as string | null;
         session.user.agentVerified = token.agentVerified as boolean;
       }

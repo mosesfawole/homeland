@@ -2,12 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { registerSchema } from "@/lib/validations/auth";
 import { getSupabaseAdmin, formatSupabaseError } from "@/lib/supabase-server";
-import { getRequestIp, checkRateLimit } from "@/lib/security";
+import { getRequestIp, checkRateLimit, isSameOrigin } from "@/lib/security";
 import { createVerificationToken } from "@/lib/token";
 import { sendVerificationEmail } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
   try {
+    if (!isSameOrigin(req)) {
+      return NextResponse.json({ error: "Invalid request origin" }, { status: 403 });
+    }
     const ip = getRequestIp(req);
     const limit = await checkRateLimit(`register:${ip}`, 5, 60_000);
     if (!limit.ok) {
@@ -27,7 +30,7 @@ export async function POST(req: NextRequest) {
 
     if (!parsed.success) {
       return NextResponse.json(
-        { error: parsed.error.errors[0].message },
+        { error: parsed.error.issues[0].message },
         { status: 400 },
       );
     }
@@ -58,11 +61,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const hashed = await bcrypt.hash(password, 12);
+    const hashedPassword = await bcrypt.hash(password, 12);
 
     const { data: user, error: userError } = await supabase
       .from("User")
-      .insert({ name, email, password: hashed, role })
+      .insert({ name, email, password: hashedPassword, role })
       .select("id")
       .single();
 
@@ -96,14 +99,14 @@ export async function POST(req: NextRequest) {
       agentProfileId = agentProfile?.id ?? null;
     }
 
-    const { token, hashed } = createVerificationToken();
+    const { token, hashed: verificationHash } = createVerificationToken();
     const expires = new Date(Date.now() + 1000 * 60 * 60 * 24);
 
     const { error: tokenError } = await supabase
       .from("VerificationToken")
       .insert({
         identifier: email,
-        token: hashed,
+        token: verificationHash,
         expires,
       });
 

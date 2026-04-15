@@ -29,6 +29,16 @@ export function parsePagination(searchParams: URLSearchParams) {
   return { page, limit, skip };
 }
 
+export type RelationValue<T> = T | T[] | null | undefined;
+
+export function unwrapRelation<T>(value: RelationValue<T>): T | null {
+  if (Array.isArray(value)) {
+    return value[0] ?? null;
+  }
+
+  return value ?? null;
+}
+
 export function buildPropertyFilters(
   searchParams: URLSearchParams,
 ): PropertyFilterInput {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
-import { getRequestIp, checkRateLimit } from "@/lib/security";
+import { getRequestIp, checkRateLimit, isSameOrigin } from "@/lib/security";
 import Anthropic from "@anthropic-ai/sdk";
 
 const anthropicClient = new Anthropic({
@@ -232,6 +232,9 @@ async function callGemini(description: string) {
 
 export async function POST(req: NextRequest) {
   try {
+    if (!isSameOrigin(req)) {
+      return NextResponse.json({ error: "Invalid request origin" }, { status: 403 });
+    }
     const ip = getRequestIp(req);
     const perMinute = Number(process.env.AI_RATE_LIMIT_PER_MIN ?? 60);
     const windowMs = Number(process.env.AI_RATE_LIMIT_WINDOW_MS ?? 60_000);
@@ -280,7 +283,7 @@ export async function POST(req: NextRequest) {
 
     if (!parsed.success) {
       return NextResponse.json(
-        { error: parsed.error.errors[0].message },
+        { error: parsed.error.issues[0].message },
         { status: 400 },
       );
     }
@@ -330,9 +333,20 @@ export async function POST(req: NextRequest) {
 
     // Strip any accidental markdown fences
     const clean = text.replace(/```json|```/g, "").trim();
-    const parsedResult = JSON.parse(clean);
+    let parsedResult: unknown;
+    try {
+      parsedResult = JSON.parse(clean);
+    } catch {
+      return NextResponse.json(
+        {
+          error:
+            "The AI response could not be parsed. Please simplify the description and try again.",
+        },
+        { status: 422 },
+      );
+    }
 
-    const normalized = { ...parsedResult } as Record<string, unknown>;
+    const normalized = { ...(parsedResult as Record<string, unknown>) };
 
     if (typeof normalized.propertyType === "string") {
       const lower = normalized.propertyType.toLowerCase();

@@ -49,7 +49,8 @@ export const propertySchema = z.object({
   aiRawInput: z.string().nullable().optional(),
 });
 
-export type PropertyFormInput = z.infer<typeof propertySchema>;
+export type PropertyFormValues = z.input<typeof propertySchema>;
+export type PropertyFormInput = z.output<typeof propertySchema>;
 
 // Common Nigerian states for the dropdown
 export const NIGERIAN_STATES = [

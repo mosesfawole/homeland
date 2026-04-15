@@ -6,6 +6,7 @@ import {
   sendBookingConfirmedEmail,
 } from "@/lib/email";
 import { formatSupabaseError, getSupabaseAdmin } from "@/lib/supabase-server";
+import { isSameOrigin } from "@/lib/security";
 
 export const runtime = "nodejs";
 
@@ -21,6 +22,9 @@ interface RouteProps {
 
 export async function PATCH(req: NextRequest, { params }: RouteProps) {
   try {
+    if (!isSameOrigin(req)) {
+      return NextResponse.json({ error: "Invalid request origin" }, { status: 403 });
+    }
     const session = await auth();
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -31,7 +35,7 @@ export async function PATCH(req: NextRequest, { params }: RouteProps) {
     const parsed = actionSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
-        { error: parsed.error.errors[0].message },
+        { error: parsed.error.issues[0].message },
         { status: 400 },
       );
     }

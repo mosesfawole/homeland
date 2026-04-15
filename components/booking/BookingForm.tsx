@@ -14,6 +14,7 @@ export default function BookingForm({ propertyId }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const minDate = new Date().toISOString().split("T")[0] ?? "";
 
   const submit = async () => {
     setError(null);
@@ -44,6 +45,8 @@ export default function BookingForm({ propertyId }: Props) {
       }
 
       setSuccess("Tour request sent. The agent will confirm shortly.");
+      setTourDate("");
+      setTourTime("");
       setMessage("");
     } catch {
       setError("Network error. Please try again.");
@@ -75,6 +78,7 @@ export default function BookingForm({ propertyId }: Props) {
           <input
             type="date"
             value={tourDate}
+            min={minDate}
             onChange={(event) => setTourDate(event.target.value)}
             className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm"
           />

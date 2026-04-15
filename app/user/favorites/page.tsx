@@ -4,9 +4,26 @@ import PropertyCard, {
   type PropertyCardData,
 } from "@/components/property/PropertyCard";
 import { formatSupabaseError, getSupabaseAdmin } from "@/lib/supabase-server";
+import { unwrapRelation, type RelationValue } from "@/lib/utils/helpers";
 
 export const metadata = {
   title: "Saved Properties - Homeland",
+};
+
+type AgentUserSummary = {
+  name: string | null;
+  avatar: string | null;
+};
+
+type FavoriteAgentProfile = {
+  agencyName: string | null;
+  verificationStatus: string;
+  user: RelationValue<AgentUserSummary>;
+};
+
+type FavoriteProperty = Omit<PropertyCardData, "agentProfile" | "images"> & {
+  images: Array<{ url: string; isPrimary?: boolean; order?: number }>;
+  agentProfile: RelationValue<FavoriteAgentProfile>;
 };
 
 export default async function UserFavoritesPage() {
@@ -53,14 +70,26 @@ export default async function UserFavoritesPage() {
 
   const properties = (favorites ?? [])
     .map((fav) => {
-      const property = fav.property;
+      const property = unwrapRelation(
+        fav.property as RelationValue<FavoriteProperty>,
+      );
       if (!property) return null;
       const images = Array.isArray(property.images) ? property.images : [];
       const primary =
         images.find((img: { isPrimary?: boolean }) => img.isPrimary) ?? images[0];
+      const agent = unwrapRelation(property.agentProfile);
+      const agentUser = unwrapRelation(agent?.user);
       return {
         ...property,
         images: primary ? [{ url: primary.url }] : [],
+        agentProfile: {
+          agencyName: agent?.agencyName ?? null,
+          verificationStatus: agent?.verificationStatus ?? "",
+          user: {
+            name: agentUser?.name ?? null,
+            avatar: agentUser?.avatar ?? null,
+          },
+        },
       } as PropertyCardData;
     })
     .filter(Boolean) as PropertyCardData[];

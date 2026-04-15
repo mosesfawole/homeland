@@ -3,8 +3,20 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { sendBookingReceivedEmail } from "@/lib/email";
 import { formatSupabaseError, getSupabaseAdmin } from "@/lib/supabase-server";
+import { unwrapRelation, type RelationValue } from "@/lib/utils/helpers";
+import { isSameOrigin, getRequestIp, checkRateLimit } from "@/lib/security";
 
 export const runtime = "nodejs";
+
+type AgentUser = {
+  email: string | null;
+  name: string | null;
+};
+
+type AgentProfile = {
+  id: string;
+  user: RelationValue<AgentUser>;
+};
 
 const bookingSchema = z.object({
   propertyId: z.string().min(1),
@@ -15,6 +27,22 @@ const bookingSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
+    if (!isSameOrigin(req)) {
+      return NextResponse.json({ error: "Invalid request origin" }, { status: 403 });
+    }
+    const ip = getRequestIp(req);
+    const limit = await checkRateLimit(`booking:${ip}`, 10, 60_000);
+    if (!limit.ok) {
+      return NextResponse.json(
+        { error: "Too many booking attempts. Please try again shortly." },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(Math.ceil((limit.resetAt - Date.now()) / 1000)),
+          },
+        },
+      );
+    }
     const session = await auth();
     if (!session || session.user.role !== "USER") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -25,7 +53,7 @@ export async function POST(req: NextRequest) {
 
     if (!parsed.success) {
       return NextResponse.json(
-        { error: parsed.error.errors[0].message },
+        { error: parsed.error.issues[0].message },
         { status: 400 },
       );
     }
@@ -59,11 +87,40 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const tourDateTime = new Date(`${tourDate}T${tourTime}`);
+    const tourDateTime = new Date(`${tourDate}T${tourTime}:00+01:00`);
     if (Number.isNaN(tourDateTime.getTime())) {
       return NextResponse.json(
         { error: "Invalid date or time" },
         { status: 400 },
+      );
+    }
+    if (tourDateTime.getTime() <= Date.now()) {
+      return NextResponse.json(
+        { error: "Tour time must be in the future" },
+        { status: 400 },
+      );
+    }
+    const tourDateIso = tourDateTime.toISOString();
+
+    const { data: conflicts, error: conflictError } = await supabase
+      .from("Booking")
+      .select("id")
+      .eq("propertyId", propertyId)
+      .eq("tourDate", tourDateIso)
+      .in("status", ["PENDING", "CONFIRMED"]);
+
+    if (conflictError) {
+      console.error("[POST /api/bookings] Conflict check failed", formatSupabaseError(conflictError));
+      return NextResponse.json(
+        { error: "Unable to validate booking availability" },
+        { status: 500 },
+      );
+    }
+
+    if ((conflicts ?? []).length > 0) {
+      return NextResponse.json(
+        { error: "That time slot is already booked. Please pick another time." },
+        { status: 409 },
       );
     }
 
@@ -72,7 +129,7 @@ export async function POST(req: NextRequest) {
       .insert({
         userId: session.user.id,
         propertyId,
-        tourDate: tourDateTime.toISOString(),
+        tourDate: tourDateIso,
         tourTime,
         message: message ?? null,
         status: "PENDING",
@@ -88,11 +145,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const agentProfile = unwrapRelation(
+      property.agentProfile as RelationValue<AgentProfile>,
+    );
+    const agentUser = unwrapRelation(agentProfile?.user);
+
     await sendBookingReceivedEmail({
-      agentEmail: property.agentProfile?.user?.email ?? null,
-      agentName: property.agentProfile?.user?.name ?? null,
+      agentEmail: agentUser?.email ?? null,
+      agentName: agentUser?.name ?? null,
       propertyTitle: property.title,
-      tourDate: tourDateTime.toLocaleDateString("en-NG"),
+      tourDate: tourDateTime.toLocaleDateString("en-NG", {
+        timeZone: "Africa/Lagos",
+      }),
       tourTime,
       userName: session.user.name ?? null,
       bookingId: booking.id,

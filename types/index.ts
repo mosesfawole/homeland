@@ -51,7 +51,7 @@ export interface ParsedProperty {
   city: string | null;
   state: string | null;
   neighborhood: string | null;
-  price: number;
+  price: number | null;
   rentDuration: "year" | "month" | null;
   features: string[];
 }

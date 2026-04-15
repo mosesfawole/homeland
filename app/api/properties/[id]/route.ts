@@ -4,6 +4,7 @@ import { propertySchema, type PropertyFormInput } from "@/lib/validations/proper
 import type { PropertyImageInput } from "@/types";
 import { PROPERTY_STATUSES, type PropertyStatus, type VerificationStatus } from "@/lib/db-types";
 import { formatSupabaseError, getSupabaseAdmin } from "@/lib/supabase-server";
+import { isSameOrigin } from "@/lib/security";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -18,18 +19,31 @@ export async function GET(req: NextRequest, { params }: Params) {
       .from("Property")
       .select(
         `
-        *,
-        images:PropertyImage(*),
-        videos:PropertyVideo(*),
+        id,
+        title,
+        description,
+        propertyType,
+        listingType,
+        bedrooms,
+        bathrooms,
+        toilets,
+        price,
+        rentDuration,
+        address,
+        city,
+        state,
+        neighborhood,
+        features,
+        isFeatured,
+        viewCount,
+        status,
+        createdAt,
+        agentProfileId,
+        images:PropertyImage(url, publicId, isPrimary, order),
         agentProfile:AgentProfile(
-          *,
-          user:User(name, email, avatar, phone, createdAt)
-        ),
-        reviews:Review(
           id,
-          rating,
-          comment,
-          createdAt,
+          agencyName,
+          verificationStatus,
           user:User(name, avatar)
         )
       `,
@@ -81,12 +95,10 @@ export async function GET(req: NextRequest, { params }: Params) {
     const viewCount = typeof property.viewCount === "number" ? property.viewCount : 0;
 
     // Increment view count — fire and forget
-    supabase
+    void supabase
       .from("Property")
       .update({ viewCount: viewCount + 1 })
-      .eq("id", id)
-      .then(() => {})
-      .catch(() => {});
+      .eq("id", id);
 
     const images = Array.isArray(property.images)
       ? property.images.sort((a, b) => {
@@ -95,21 +107,32 @@ export async function GET(req: NextRequest, { params }: Params) {
         })
       : [];
 
-    const reviews = Array.isArray(property.reviews)
-      ? property.reviews
-          .slice()
-          .sort(
-            (a, b) =>
-              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-          )
-          .slice(0, 10)
-      : [];
+    const publicProperty = {
+      id: property.id,
+      title: property.title,
+      description: property.description,
+      propertyType: property.propertyType,
+      listingType: property.listingType,
+      bedrooms: property.bedrooms,
+      bathrooms: property.bathrooms,
+      toilets: property.toilets,
+      price: property.price,
+      rentDuration: property.rentDuration,
+      address: property.address,
+      city: property.city,
+      state: property.state,
+      neighborhood: property.neighborhood,
+      features: property.features,
+      isFeatured: property.isFeatured,
+      viewCount: property.viewCount,
+      createdAt: property.createdAt,
+      agentProfile: property.agentProfile,
+    };
 
     return NextResponse.json({
       data: {
-        ...property,
+        ...publicProperty,
         images,
-        reviews,
         _count: {
           bookings: bookingsCount,
           reviews: reviewsCount,
@@ -131,6 +154,9 @@ export async function GET(req: NextRequest, { params }: Params) {
 // Agent (own) or Admin — update a listing
 export async function PATCH(req: NextRequest, { params }: Params) {
   try {
+    if (!isSameOrigin(req)) {
+      return NextResponse.json({ error: "Invalid request origin" }, { status: 403 });
+    }
     const { id } = await params;
     const session = await auth();
 
@@ -199,7 +225,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       const parsed = propertySchema.partial().safeParse(body);
       if (!parsed.success) {
         return NextResponse.json(
-          { error: parsed.error.errors[0].message },
+          { error: parsed.error.issues[0].message },
           { status: 400 },
         );
       }
@@ -213,12 +239,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
     let nextImages: PropertyImageInput[] | undefined;
     if (updateData.images) {
-      nextImages = updateData.images;
-      const { images, ...rest } = updateData;
+      const { images: imagesToUpdate, ...rest } = updateData;
+      nextImages = imagesToUpdate;
       updateData = rest;
-    }
-    if (nextImages) {
-      delete (updateData as any).images;
     }
 
     const { data: updated, error: updateError } = await supabase
@@ -237,7 +260,38 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     }
 
     if (nextImages) {
-      await supabase.from("PropertyImage").delete().eq("propertyId", id);
+      const { data: existingImages, error: existingImagesError } = await supabase
+        .from("PropertyImage")
+        .select("url, publicId, isPrimary, order")
+        .eq("propertyId", id);
+
+      if (existingImagesError) {
+        console.error(
+          "[PATCH /api/properties/[id]] Existing image lookup failed",
+          formatSupabaseError(existingImagesError),
+        );
+        return NextResponse.json(
+          { error: "Failed to update property images" },
+          { status: 500 },
+        );
+      }
+
+      const { error: deleteImagesError } = await supabase
+        .from("PropertyImage")
+        .delete()
+        .eq("propertyId", id);
+
+      if (deleteImagesError) {
+        console.error(
+          "[PATCH /api/properties/[id]] Existing image delete failed",
+          formatSupabaseError(deleteImagesError),
+        );
+        return NextResponse.json(
+          { error: "Failed to update property images" },
+          { status: 500 },
+        );
+      }
+
       if (nextImages.length > 0) {
         const imageRows = nextImages.map((image, index) => ({
           propertyId: id,
@@ -250,6 +304,14 @@ export async function PATCH(req: NextRequest, { params }: Params) {
           .from("PropertyImage")
           .insert(imageRows);
         if (imagesError) {
+          if ((existingImages ?? []).length > 0) {
+            await supabase.from("PropertyImage").insert(
+              existingImages.map((image) => ({
+                propertyId: id,
+                ...image,
+              })),
+            );
+          }
           console.error("[PATCH /api/properties/[id]] Image update failed", formatSupabaseError(imagesError));
           return NextResponse.json(
             { error: "Failed to update property images" },
@@ -274,6 +336,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 // Agent (own) or Admin — delete a listing
 export async function DELETE(req: NextRequest, { params }: Params) {
   try {
+    if (!isSameOrigin(req)) {
+      return NextResponse.json({ error: "Invalid request origin" }, { status: 403 });
+    }
     const { id } = await params;
     const session = await auth();
 
@@ -331,9 +396,7 @@ export async function DELETE(req: NextRequest, { params }: Params) {
       await supabase
         .from("AgentProfile")
         .update({ totalListings: Math.max(current - 1, 0) })
-        .eq("id", property.agentProfileId)
-        .then(() => {})
-        .catch(() => {});
+        .eq("id", property.agentProfileId);
     }
 
     return NextResponse.json({ message: "Listing deleted successfully" });

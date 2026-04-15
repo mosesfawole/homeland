@@ -11,24 +11,21 @@ export interface PropertyImageInput {
   order?: number;
 }
 
-type UploadProps = {
-  mode?: "upload";
+type Props = {
+  mode?: "upload" | "gallery";
   value: PropertyImageInput[];
-  onChange: (images: PropertyImageInput[]) => void;
+  onChange?: (images: PropertyImageInput[]) => void;
   maxImages?: number;
 };
-
-type GalleryProps = {
-  mode: "gallery";
-  value: PropertyImageInput[];
-};
-
-type Props = UploadProps | GalleryProps;
 
 interface CloudinarySignature {
   signature: string;
   timestamp: number;
   folder: string;
+  allowedFormats: string[];
+  maxFileSize: number;
+  resourceType: string;
+  uploadType: string;
   apiKey: string;
   cloudName: string;
 }
@@ -94,8 +91,11 @@ export default function PropertyImages({
     formData.append("timestamp", String(signature.timestamp));
     formData.append("signature", signature.signature);
     formData.append("folder", signature.folder);
+    formData.append("allowed_formats", signature.allowedFormats.join(","));
+    formData.append("max_file_size", String(signature.maxFileSize));
+    formData.append("type", signature.uploadType);
 
-    const uploadUrl = `https://api.cloudinary.com/v1_1/${signature.cloudName}/image/upload`;
+    const uploadUrl = `https://api.cloudinary.com/v1_1/${signature.cloudName}/${signature.resourceType}/upload`;
     const res = await fetch(uploadUrl, { method: "POST", body: formData });
     const json = await res.json();
 

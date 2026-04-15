@@ -143,3 +143,31 @@ export async function sendVerificationEmail(params: {
     `,
   });
 }
+
+export async function sendPasswordResetEmail(params: {
+  userEmail?: string | null;
+  userName?: string | null;
+  resetUrl: string;
+}) {
+  if (!resend || !params.userEmail) {
+    if (process.env.NODE_ENV !== "production") {
+      console.info("[password-reset] link:", params.resetUrl);
+    }
+    return;
+  }
+
+  const name = params.userName ?? "there";
+  const subject = "Reset your Homeland password";
+
+  await sendEmail({
+    to: params.userEmail,
+    subject,
+    text: `Hi ${name},\n\nWe received a request to reset your password. Use the link below to set a new one:\n${params.resetUrl}\n\nIf you didn't request this, you can ignore this email.`,
+    html: `
+      <p>Hi ${name},</p>
+      <p>We received a request to reset your password. Use the link below to set a new one:</p>
+      <p><a href="${params.resetUrl}">Reset your password</a></p>
+      <p style="color:#64748b;font-size:12px">If you didn't request this, you can ignore this email.</p>
+    `,
+  });
+}

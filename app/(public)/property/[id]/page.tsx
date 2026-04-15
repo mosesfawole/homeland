@@ -109,9 +109,9 @@ export default async function PropertyDetailPage({ params }: PageProps) {
             verificationStatus={property.agentProfile?.verificationStatus ?? ""}
             user={{
               name: property.agentProfile?.user?.name ?? null,
-              email: property.agentProfile?.user?.email ?? null,
-              phone: property.agentProfile?.user?.phone ?? null,
               avatar: property.agentProfile?.user?.avatar ?? null,
+              email: null,
+              phone: null,
             }}
           />
 

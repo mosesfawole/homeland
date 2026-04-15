@@ -24,6 +24,11 @@
 1. Add your `ANTHROPIC_API_KEY` to enable the AI parser.
 2. Test `POST /api/ai/parse-property` from an agent account.
 
-## 6) DNS Fix (if needed)
+## 6) Upstash Rate Limiting
+1. Create an Upstash Redis database.
+2. Set `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`.
+3. This is required for durable production rate limiting on Vercel.
+
+## 7) DNS Fix (if needed)
 1. If you see DNS or IPv6 resolution errors in production, set `NODE_OPTIONS=--dns-result-order=ipv4first`.
 2. This is included in `.env.example` for local parity.

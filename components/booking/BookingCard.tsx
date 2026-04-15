@@ -120,7 +120,7 @@ export default function BookingCard({ booking, role }: Props) {
 
       {booking.message ? (
         <div className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
-          "{booking.message}"
+          &ldquo;{booking.message}&rdquo;
         </div>
       ) : null}
 

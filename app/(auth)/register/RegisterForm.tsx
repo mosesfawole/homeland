@@ -10,16 +10,15 @@ import { Eye, EyeOff, Loader2 } from "lucide-react";
 export default function RegisterForm() {
   const router = useRouter();
   const [showPass, setShowPass] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<RegisterInput["role"] | "">("");
   const [serverError, setServerError] = useState<string | null>(null);
 
   const {
     register,
     handleSubmit,
-    watch,
     formState: { errors, isSubmitting },
   } = useForm<RegisterInput>({ resolver: zodResolver(registerSchema) });
-
-  const selectedRole = watch("role");
+  const roleRegistration = register("role");
 
   const onSubmit = async (data: RegisterInput) => {
     setServerError(null);
@@ -67,7 +66,11 @@ export default function RegisterForm() {
               <input
                 type="radio"
                 value={role}
-                {...register("role")}
+                {...roleRegistration}
+                onChange={(event) => {
+                  roleRegistration.onChange(event);
+                  setSelectedRole(role);
+                }}
                 className="sr-only"
               />
               {role === "USER" ? "Property Seeker" : "Property Agent"}

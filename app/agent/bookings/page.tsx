@@ -1,10 +1,22 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import BookingCard from "@/components/booking/BookingCard";
+import BookingCard, { type BookingCardData } from "@/components/booking/BookingCard";
 import { formatSupabaseError, getSupabaseAdmin } from "@/lib/supabase-server";
+import { unwrapRelation, type RelationValue } from "@/lib/utils/helpers";
 
 export const metadata = {
   title: "Tour Requests - Homeland",
+};
+
+type BookingProperty = {
+  id: string;
+  title: string;
+};
+
+type BookingUser = {
+  name: string | null;
+  email: string | null;
+  phone?: string | null;
 };
 
 export default async function AgentBookingsPage() {
@@ -56,7 +68,17 @@ export default async function AgentBookingsPage() {
     console.error("[AgentBookingsPage] Failed to load bookings", formatSupabaseError(bookingsError));
   }
 
-  const bookingList = bookings ?? [];
+  const bookingList = (bookings ?? []).map((booking) => {
+    const property = unwrapRelation(
+      booking.property as RelationValue<BookingProperty>,
+    );
+    const user = unwrapRelation(booking.user as RelationValue<BookingUser>);
+    return {
+      ...booking,
+      property: property ?? { id: "", title: "Property" },
+      user,
+    } as BookingCardData;
+  });
 
   return (
     <div className="space-y-6">

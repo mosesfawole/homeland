@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import AdminSidebarNav from "@/components/layout/AdminSidebarNav";
 import Navbar from "@/components/layout/Navbar";
+import { getCallbackUrl } from "@/lib/utils/request";
 
 export default async function AdminLayout({
   children,
@@ -9,8 +10,12 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const session = await auth();
-  if (!session || session.user.role !== "ADMIN") {
-    redirect("/login");
+  if (!session) {
+    const callbackUrl = await getCallbackUrl("/admin/dashboard");
+    redirect(`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+  }
+  if (session.user.role !== "ADMIN") {
+    redirect("/forbidden");
   }
 
   return (
