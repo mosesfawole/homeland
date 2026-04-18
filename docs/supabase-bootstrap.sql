@@ -231,15 +231,28 @@ create index if not exists "Property_status_idx" on "Property" ("status");
 create index if not exists "Property_agentProfileId_idx" on "Property" ("agentProfileId");
 create index if not exists "Booking_userId_idx" on "Booking" ("userId");
 create index if not exists "Booking_propertyId_idx" on "Booking" ("propertyId");
+create index if not exists "Account_userId_idx" on "Account" ("userId");
+create index if not exists "Favorite_userId_idx" on "Favorite" ("userId");
+create index if not exists "Favorite_propertyId_idx" on "Favorite" ("propertyId");
+create index if not exists "Report_userId_idx" on "Report" ("userId");
+create index if not exists "Report_propertyId_idx" on "Report" ("propertyId");
+create index if not exists "Review_userId_idx" on "Review" ("userId");
+create index if not exists "Review_propertyId_idx" on "Review" ("propertyId");
+create index if not exists "Session_userId_idx" on "Session" ("userId");
+create index if not exists "PropertyImage_propertyId_idx" on "PropertyImage" ("propertyId");
+create index if not exists "PropertyVideo_propertyId_idx" on "PropertyVideo" ("propertyId");
 
 -- UpdatedAt trigger
 create or replace function set_updated_at()
-returns trigger as $$
+returns trigger
+language plpgsql
+set search_path = public
+as $$
 begin
   new."updatedAt" = now();
   return new;
 end;
-$$ language plpgsql;
+$$;
 
 create trigger "User_set_updated_at" before update on "User"
 for each row execute function set_updated_at();
@@ -252,3 +265,32 @@ for each row execute function set_updated_at();
 
 create trigger "Booking_set_updated_at" before update on "Booking"
 for each row execute function set_updated_at();
+
+-- Security hardening
+-- This app talks to Supabase from the server using the service-role key,
+-- so anon/authenticated clients should not access these tables directly.
+alter table "User" enable row level security;
+alter table "AgentProfile" enable row level security;
+alter table "Property" enable row level security;
+alter table "PropertyImage" enable row level security;
+alter table "PropertyVideo" enable row level security;
+alter table "Booking" enable row level security;
+alter table "Review" enable row level security;
+alter table "Favorite" enable row level security;
+alter table "Report" enable row level security;
+alter table "Account" enable row level security;
+alter table "Session" enable row level security;
+alter table "VerificationToken" enable row level security;
+
+revoke all on table "User" from anon, authenticated;
+revoke all on table "AgentProfile" from anon, authenticated;
+revoke all on table "Property" from anon, authenticated;
+revoke all on table "PropertyImage" from anon, authenticated;
+revoke all on table "PropertyVideo" from anon, authenticated;
+revoke all on table "Booking" from anon, authenticated;
+revoke all on table "Review" from anon, authenticated;
+revoke all on table "Favorite" from anon, authenticated;
+revoke all on table "Report" from anon, authenticated;
+revoke all on table "Account" from anon, authenticated;
+revoke all on table "Session" from anon, authenticated;
+revoke all on table "VerificationToken" from anon, authenticated;

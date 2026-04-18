@@ -10,6 +10,8 @@
 2. Set `NEXT_PUBLIC_SUPABASE_URL` to your project URL.
 3. Set `SUPABASE_SERVICE_ROLE_KEY` to the service role key (server-only).
 4. Ensure the required tables exist in the `public` schema (see `prisma/schema.prisma` for the structure).
+5. Run `docs/supabase-security-fix.sql` on existing projects, or use the updated `docs/supabase-bootstrap.sql` for fresh setup so Row-Level Security is enabled on all app tables.
+6. Optionally run `docs/supabase-advisor-followup.sql` to clear the mutable `search_path` warning and add missing foreign-key indexes.
 
 ## 3) Cloudinary
 1. Create a Cloudinary account and add the cloud name, API key, and API secret.
