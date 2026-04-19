@@ -30,7 +30,9 @@ export default function ContactPage() {
             </p>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-2">
-            <h2 className="text-lg font-semibold text-slate-900">Partnerships</h2>
+            <h2 className="text-lg font-semibold text-slate-900">
+              Partnerships
+            </h2>
             <p className="text-sm text-slate-600">
               Agencies, property managers, and marketplace integrations.
             </p>
@@ -99,12 +101,9 @@ export default function ContactPage() {
             <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-2">
               <h2 className="text-lg font-semibold text-slate-900">Office</h2>
               <p className="text-sm text-slate-600">
-                Placeholder address for now. Update with your preferred
-                location.
+                Placeholder address for now
               </p>
-              <p className="text-sm text-slate-800 font-medium">
-                12 Adeola Odeku St, Victoria Island, Lagos
-              </p>
+              <p className="text-sm text-slate-800 font-medium">Lorem ipsum </p>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-2">
               <h2 className="text-lg font-semibold text-slate-900">
