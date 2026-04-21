@@ -57,8 +57,7 @@ export default function ContactPage() {
               Send a message
             </h2>
             <p className="text-sm text-slate-600">
-              This form is a placeholder for now. Replace with your preferred
-              support system or CRM workflow.
+              This form is a placeholder for now.
             </p>
             <div className="grid gap-4">
               <input

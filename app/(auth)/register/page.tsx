@@ -6,8 +6,7 @@ export const metadata = {
 
 export default function RegisterPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12">
-      <div className="w-full max-w-md">
+    <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-gray-900">
             Create an account
@@ -17,7 +16,6 @@ export default function RegisterPage() {
           </p>
         </div>
         <RegisterForm />
-      </div>
     </div>
   );
 }

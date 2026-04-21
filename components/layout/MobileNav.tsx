@@ -31,13 +31,22 @@ export default function MobileNav({
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
     return () => {
       document.body.style.overflow = originalOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
     };
   }, [open]);
 
   return (
-    <div className="md:hidden">
+    <div className="relative z-[60] md:hidden">
       <button
         type="button"
         aria-expanded={open}
@@ -60,8 +69,23 @@ export default function MobileNav({
           />
           <div
             id="mobile-nav-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Mobile navigation"
             className="fixed inset-x-4 top-20 z-50 rounded-3xl border border-slate-200 bg-white p-4 shadow-2xl"
           >
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <p className="text-sm font-semibold text-slate-900">Navigation</p>
+              <button
+                type="button"
+                aria-label="Close navigation menu"
+                onClick={() => setOpen(false)}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 text-slate-700 transition-colors hover:bg-slate-50"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
             <nav className="flex flex-col gap-1">
               {navLinks.map((link) => (
                 <Link
