@@ -7,9 +7,6 @@ const requiredInProd = [
   "CLOUDINARY_API_KEY",
   "CLOUDINARY_API_SECRET",
   "RESEND_API_KEY",
-  "RESEND_FROM_EMAIL",
-  "UPSTASH_REDIS_REST_URL",
-  "UPSTASH_REDIS_REST_TOKEN",
 ];
 
 const missing = requiredInProd.filter((key) => !process.env[key]);

@@ -45,9 +45,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           throw new Error("RateLimited");
         }
         const supabase = getSupabaseAdmin();
-        const devBypassEmailVerification =
-          process.env.NODE_ENV !== "production" &&
-          process.env.AUTH_DEV_BYPASS_EMAIL_VERIFICATION === "1";
 
         const { data: user, error: userError } = await supabase
           .from("User")
@@ -56,9 +53,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           .maybeSingle();
 
         if (userError || !user || !user.password) return null;
-        if (!user.emailVerified && !devBypassEmailVerification) {
-          throw new Error("EmailNotVerified");
-        }
 
         const { data: agentProfile } = await supabase
           .from("AgentProfile")
