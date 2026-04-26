@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import ResetPasswordForm from "./ResetPasswordForm";
 
 export const metadata = {
@@ -15,7 +16,9 @@ export default function ResetPasswordPage() {
             Create a new password to access your account.
           </p>
         </div>
-        <ResetPasswordForm />
+        <Suspense fallback={<div />}>
+          <ResetPasswordForm />
+        </Suspense>
     </div>
   );
 }
