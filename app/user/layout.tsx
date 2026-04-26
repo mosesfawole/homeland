@@ -21,17 +21,17 @@ export default async function UserLayout({
   return (
     <>
       <Navbar />
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen overflow-x-hidden bg-gray-50">
         <div className="max-w-6xl mx-auto px-4 py-6">
-          <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-6">
-            <aside className="bg-white border border-gray-100 rounded-xl p-4 h-fit shadow-sm">
+          <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
+            <aside className="hidden bg-white border border-gray-100 rounded-xl p-4 h-fit shadow-sm lg:block">
               <h2 className="text-sm font-semibold text-gray-900 mb-4">
                 User Dashboard
               </h2>
               <UserSidebarNav />
             </aside>
 
-            <main>{children}</main>
+            <main className="min-w-0">{children}</main>
           </div>
         </div>
       </div>

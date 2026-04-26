@@ -19,18 +19,18 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen overflow-x-hidden bg-gray-50">
+      <Navbar />
       <div className="max-w-6xl mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-6">
-          <aside className="bg-white border border-gray-100 rounded-xl p-4 h-fit shadow-sm">
+        <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
+          <aside className="hidden bg-white border border-gray-100 rounded-xl p-4 h-fit shadow-sm lg:block">
             <h2 className="text-sm font-semibold text-gray-900 mb-4">
               Admin Console
             </h2>
             <AdminSidebarNav />
           </aside>
 
-          <main className="space-y-6">
-            <Navbar />
+          <main className="min-w-0 space-y-6">
             {children}
           </main>
         </div>
