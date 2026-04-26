@@ -28,6 +28,7 @@ export default function LoginForm() {
   const reset = searchParams.get("reset");
   const [showPass, setShowPass] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [isSigningIn, setIsSigningIn] = useState(false);
 
   const {
     register,
@@ -40,6 +41,7 @@ export default function LoginForm() {
 
   const onSubmit = async (data: LoginInput) => {
     setAuthError(null);
+    setIsSigningIn(true);
     try {
       const result = await signIn("credentials", {
         email: data.email,
@@ -56,6 +58,7 @@ export default function LoginForm() {
         } else {
           setAuthError("Invalid email or password");
         }
+        setIsSigningIn(false);
         return;
       }
 
@@ -74,14 +77,34 @@ export default function LoginForm() {
       }
     } catch {
       setAuthError("Something went wrong. Please try again.");
+      setIsSigningIn(false);
     }
   };
 
   return (
-    <form
-      onSubmit={handleSubmit(onSubmit)}
-      className="space-y-5 rounded-[1.75rem] border border-[#e7e0d2] bg-white p-6 shadow-xl shadow-stone-200/70 sm:p-8"
-    >
+    <>
+      {isSigningIn ? (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed inset-0 z-[90] flex items-center justify-center bg-[#f7f5f0]/90 px-6 backdrop-blur-sm"
+        >
+          <div className="flex w-full max-w-xs flex-col items-center rounded-[1.5rem] border border-[#e7e0d2] bg-white p-6 text-center shadow-xl shadow-stone-200/70">
+            <Loader2 size={24} className="animate-spin text-[#12372a]" />
+            <p className="mt-4 text-sm font-semibold text-[#121826]">
+              Signing you in
+            </p>
+            <p className="mt-1 text-xs leading-5 text-[#6f6a5f]">
+              Checking your account and opening your dashboard.
+            </p>
+          </div>
+        </div>
+      ) : null}
+
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="space-y-5 rounded-[1.75rem] border border-[#e7e0d2] bg-white p-6 shadow-xl shadow-stone-200/70 sm:p-8"
+      >
       {authError && (
         <div className={`${noticeClass} border-red-200 bg-red-50 text-red-700`}>
           {authError}
@@ -147,11 +170,11 @@ export default function LoginForm() {
 
       <button
         type="submit"
-        disabled={isSubmitting}
+        disabled={isSubmitting || isSigningIn}
         className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#12372a] py-3 text-sm font-semibold text-white transition-colors hover:bg-[#0d2c21] disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {isSubmitting && <Loader2 size={15} className="animate-spin" />}
-        {isSubmitting ? "Signing in..." : "Sign In"}
+        {(isSubmitting || isSigningIn) && <Loader2 size={15} className="animate-spin" />}
+        {isSubmitting || isSigningIn ? "Signing in..." : "Sign In"}
       </button>
 
       <p className="text-center text-sm text-[#6f6a5f]">
@@ -172,6 +195,7 @@ export default function LoginForm() {
           Reset it
         </Link>
       </p>
-    </form>
+      </form>
+    </>
   );
 }

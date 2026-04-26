@@ -53,14 +53,14 @@ export default function MobileNav({
         aria-controls="mobile-nav-panel"
         aria-label={open ? "Close navigation menu" : "Open navigation menu"}
         onClick={() => setOpen((current) => !current)}
-        className={`inline-flex items-center gap-2 rounded-xl border px-3.5 py-2.5 text-sm font-medium transition-colors ${
+        className={`inline-flex h-11 items-center gap-2 rounded-xl border px-3 text-sm font-medium transition-colors min-[390px]:px-3.5 ${
           open
             ? "border-slate-900 bg-slate-900 text-white shadow-sm"
             : "border-[#d9cfbc] bg-white text-[#39463d] shadow-sm hover:bg-[#f8f6ee]"
         }`}
       >
         {open ? <X size={16} /> : <Menu size={16} />}
-        <span>{open ? "Close" : "Menu"}</span>
+        <span className="hidden min-[390px]:inline">{open ? "Close" : "Menu"}</span>
       </button>
 
       {open ? (
@@ -71,16 +71,16 @@ export default function MobileNav({
           aria-label="Mobile navigation"
           className="fixed inset-0 z-50 flex min-h-dvh flex-col overflow-y-auto bg-[#f7f5f0]"
         >
-          <div className="flex items-center justify-between border-b border-[#e7e0d2] bg-white/75 px-4 py-4 backdrop-blur">
+          <div className="flex min-w-0 items-center justify-between gap-3 border-b border-[#e7e0d2] bg-white/75 px-4 py-4 backdrop-blur">
             <Link
               href="/"
               onClick={() => setOpen(false)}
-              className="flex items-center gap-2"
+              className="flex min-w-0 items-center gap-2"
             >
               <span className="brand-mark">H</span>
-              <div className="leading-tight">
-                <p className="text-sm font-semibold text-[#121826]">Homeland</p>
-                <p className="text-[11px] text-[#6f6a5f]">Verified property marketplace</p>
+              <div className="min-w-0 leading-tight">
+                <p className="truncate text-sm font-semibold text-[#121826]">Homeland</p>
+                <p className="truncate text-[11px] text-[#6f6a5f]">Verified property marketplace</p>
               </div>
             </Link>
 

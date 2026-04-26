@@ -56,23 +56,23 @@ export default function BookingForm({ propertyId }: Props) {
   };
 
   return (
-    <div className="bg-white border border-gray-100 rounded-xl p-5 space-y-4">
-      <h3 className="text-sm font-semibold text-gray-900">Book a Tour</h3>
+    <div className="space-y-4 rounded-[1.5rem] border border-[#e7e0d2] bg-white p-5 shadow-sm shadow-stone-200/50">
+      <h3 className="text-base font-semibold text-[#121826]">Book a Tour</h3>
 
       {error && (
-        <div className="text-sm text-red-600 bg-red-50 border border-red-100 px-3 py-2 rounded-lg">
+        <div className="rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">
           {error}
         </div>
       )}
       {success && (
-        <div className="text-sm text-emerald-600 bg-emerald-50 border border-emerald-100 px-3 py-2 rounded-lg">
+        <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm text-emerald-600">
           {success}
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="min-w-0">
+          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-[#6f6a5f]">
             Date
           </label>
           <input
@@ -80,31 +80,31 @@ export default function BookingForm({ propertyId }: Props) {
             value={tourDate}
             min={minDate}
             onChange={(event) => setTourDate(event.target.value)}
-            className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm"
+            className="h-12 w-full min-w-0 rounded-xl border border-[#e7e0d2] bg-[#fbfaf7] px-3 text-sm outline-none focus:border-[#c7852b] focus:bg-white"
           />
         </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">
+        <div className="min-w-0">
+          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-[#6f6a5f]">
             Time
           </label>
           <input
             type="time"
             value={tourTime}
             onChange={(event) => setTourTime(event.target.value)}
-            className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm"
+            className="h-12 w-full min-w-0 rounded-xl border border-[#e7e0d2] bg-[#fbfaf7] px-3 text-sm outline-none focus:border-[#c7852b] focus:bg-white"
           />
         </div>
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-gray-600 mb-1">
+        <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-[#6f6a5f]">
           Message (optional)
         </label>
         <textarea
           value={message}
           onChange={(event) => setMessage(event.target.value)}
           rows={3}
-          className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm resize-none"
+          className="w-full resize-none rounded-xl border border-[#e7e0d2] bg-[#fbfaf7] px-3 py-3 text-sm outline-none focus:border-[#c7852b] focus:bg-white"
           placeholder="Any specific timing details?"
         />
       </div>
@@ -113,7 +113,7 @@ export default function BookingForm({ propertyId }: Props) {
         type="button"
         onClick={submit}
         disabled={isSubmitting}
-        className="w-full inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-medium px-4 py-2.5 rounded-lg"
+        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#12372a] px-4 py-3 text-sm font-semibold text-white hover:bg-[#0d2c21] disabled:opacity-60"
       >
         {isSubmitting && <Loader2 size={14} className="animate-spin" />}
         {isSubmitting ? "Sending..." : "Request Tour"}

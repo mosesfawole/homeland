@@ -53,12 +53,14 @@ export default async function Navbar() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-[#e7e0d2]/80 bg-[#f7f5f0]/90 backdrop-blur-xl">
-      <div className="page-shell flex items-center justify-between py-3.5">
-        <Link href="/" className="flex items-center gap-2">
+      <div className="page-shell flex min-w-0 items-center justify-between gap-3 py-3.5">
+        <Link href="/" className="flex min-w-0 items-center gap-2">
           <span className="brand-mark">H</span>
-          <div className="leading-tight">
-            <p className="text-sm font-semibold text-[#121826]">Homeland</p>
-            <p className="text-[11px] font-medium text-[#6f6a5f]">Verified property marketplace</p>
+          <div className="min-w-0 leading-tight">
+            <p className="truncate text-sm font-semibold text-[#121826]">Homeland</p>
+            <p className="hidden truncate text-[11px] font-medium text-[#6f6a5f] min-[420px]:block">
+              Verified property marketplace
+            </p>
           </div>
         </Link>
 
@@ -74,7 +76,7 @@ export default async function Navbar() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-2">
           <MobileNav
             navLinks={navLinks}
             dashboardHref={dashboardHref}
