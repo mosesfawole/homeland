@@ -27,29 +27,39 @@ export default function PropertyFilters({
   sortBy,
   sortOrder,
 }: Props) {
+  const inputClass =
+    "w-full rounded-xl border border-[#e7e0d2] bg-white px-3 py-2.5 text-sm outline-none transition-colors focus:border-[#c7852b]";
+  const labelClass = "mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-[#6f6a5f]";
+
   return (
-    <aside className="bg-white border border-gray-100 rounded-xl p-6 h-fit">
+    <aside className="h-fit rounded-[1.5rem] border border-[#e7e0d2] bg-white p-5 shadow-sm shadow-stone-200/50 lg:sticky lg:top-24">
+      <div className="mb-5">
+        <p className="text-sm font-semibold text-[#121826]">Refine search</p>
+        <p className="mt-1 text-xs leading-5 text-[#6f6a5f]">
+          Filter by location, budget, and inspection-ready homes.
+        </p>
+      </div>
       <form method="GET" className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">
+          <label className={labelClass}>
             Search
           </label>
           <input
             name="q"
             defaultValue={query}
             placeholder="Location, title, keyword"
-            className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50"
+            className={inputClass}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">
+          <label className={labelClass}>
             Listing Type
           </label>
           <select
             name="listingType"
             defaultValue={listingType}
-            className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm"
+            className={inputClass}
           >
             <option value="">Any</option>
             <option value="RENT">For Rent</option>
@@ -58,13 +68,13 @@ export default function PropertyFilters({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">
+          <label className={labelClass}>
             Property Type
           </label>
           <select
             name="propertyType"
             defaultValue={propertyType}
-            className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm"
+            className={inputClass}
           >
             <option value="">Any</option>
             {Object.entries(PROPERTY_TYPE_LABELS).map(([value, label]) => (
@@ -76,13 +86,13 @@ export default function PropertyFilters({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">
+          <label className={labelClass}>
             State
           </label>
           <select
             name="state"
             defaultValue={state}
-            className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm"
+            className={inputClass}
           >
             <option value="">All states</option>
             {NIGERIAN_STATES.map((item) => (
@@ -95,7 +105,7 @@ export default function PropertyFilters({
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label className={labelClass}>
               Min Price
             </label>
             <input
@@ -103,11 +113,11 @@ export default function PropertyFilters({
               type="number"
               min={0}
               defaultValue={minPrice}
-              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm"
+              className={inputClass}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label className={labelClass}>
               Max Price
             </label>
             <input
@@ -115,19 +125,19 @@ export default function PropertyFilters({
               type="number"
               min={0}
               defaultValue={maxPrice}
-              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm"
+              className={inputClass}
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">
+          <label className={labelClass}>
             Bedrooms (min)
           </label>
           <select
             name="bedrooms"
             defaultValue={bedrooms}
-            className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm"
+            className={inputClass}
           >
             <option value="">Any</option>
             {[1, 2, 3, 4, 5, 6].map((count) => (
@@ -140,26 +150,26 @@ export default function PropertyFilters({
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label className={labelClass}>
               Sort By
             </label>
             <select
               name="sortBy"
               defaultValue={sortBy}
-              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm"
+              className={inputClass}
             >
               <option value="createdAt">Newest</option>
               <option value="price">Price</option>
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label className={labelClass}>
               Order
             </label>
             <select
               name="sortOrder"
               defaultValue={sortOrder}
-              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm"
+              className={inputClass}
             >
               <option value="desc">High to Low</option>
               <option value="asc">Low to High</option>
@@ -170,13 +180,13 @@ export default function PropertyFilters({
         <div className="flex items-center gap-2">
           <button
             type="submit"
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2.5 rounded-lg"
+            className="flex-1 rounded-xl bg-[#12372a] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0d2c21]"
           >
             Apply Filters
           </button>
           <Link
             href="/search"
-            className="px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50"
+            className="rounded-xl border border-[#d9cfbc] bg-white px-4 py-2.5 text-sm font-semibold text-[#12372a] hover:bg-[#f8f6ee]"
           >
             Clear
           </Link>

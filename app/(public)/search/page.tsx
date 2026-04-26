@@ -59,8 +59,19 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     return `/search?${nextParams.toString()}`;
   };
 
+  const activeFilterCount = [
+    query,
+    listingType,
+    propertyType,
+    state,
+    minPrice,
+    maxPrice,
+    bedrooms,
+  ].filter(Boolean).length;
+
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
+    <div className="bg-[#f7f5f0]">
+      <div className="page-shell py-8 md:py-10">
       <SearchStoreSync
         query={query}
         listingType={listingType}
@@ -70,14 +81,25 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         maxPrice={maxPrice}
         bedrooms={bedrooms}
       />
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Find Properties</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Browse verified listings from trusted agents
+      <div className="mb-8 rounded-[2rem] border border-[#e7e0d2] bg-white p-6 shadow-sm shadow-stone-200/50 md:p-8">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#9b641e]">
+          Marketplace search
         </p>
+        <div className="mt-3 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <h1 className="text-3xl font-semibold text-[#121826] md:text-4xl">Find verified property</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-[#6f6a5f]">
+              Browse listings from checked agents, compare budget fit, and shortlist inspection-ready homes.
+            </p>
+          </div>
+          <div className="rounded-2xl bg-[#f7f5f0] px-4 py-3 text-sm text-[#4f5b51]">
+            <span className="font-semibold text-[#121826]">{activeFilterCount}</span>{" "}
+            active filters
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[300px_minmax(0,1fr)]">
         <PropertyFilters
           query={query}
           listingType={listingType}
@@ -91,51 +113,62 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         />
 
         <section className="space-y-6">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-500">
-              Showing {properties.length} of {meta.total ?? properties.length}{" "}
-              results
+          <div className="flex flex-col gap-3 rounded-[1.25rem] border border-[#e7e0d2] bg-white px-4 py-3 shadow-sm shadow-stone-200/50 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm font-medium text-[#4f5b51]">
+              Showing <span className="font-semibold text-[#121826]">{properties.length}</span> of{" "}
+              <span className="font-semibold text-[#121826]">{meta.total ?? properties.length}</span> results
             </p>
+            <p className="text-xs text-[#918a7a]">Newest verified listings first</p>
           </div>
 
           {properties.length === 0 ? (
-            <div className="bg-white border border-gray-100 rounded-xl p-10 text-center text-gray-500">
-              No properties match your filters.
+            <div className="rounded-[1.75rem] border border-dashed border-[#d9cfbc] bg-white p-10 text-center">
+              <h2 className="text-lg font-semibold text-[#121826]">No matching properties yet</h2>
+              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#6f6a5f]">
+                Try widening your budget, removing a location filter, or checking back after new approvals.
+              </p>
+              <Link
+                href="/search"
+                className="mt-5 inline-flex rounded-full bg-[#12372a] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0d2c21]"
+              >
+                Clear filters
+              </Link>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
               {properties.map((property) => (
                 <PropertyCard key={property.id} property={property} />
               ))}
             </div>
           )}
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between rounded-[1.25rem] border border-[#e7e0d2] bg-white p-3">
             <Link
               href={buildPageLink(Math.max(1, Number(meta.page) - 1))}
-              className={`px-4 py-2 rounded-lg text-sm border ${
+              className={`rounded-xl border px-4 py-2 text-sm font-semibold ${
                 Number(meta.page) <= 1
-                  ? "pointer-events-none text-gray-300 border-gray-200"
-                  : "text-gray-600 border-gray-200 hover:bg-gray-50"
+                  ? "pointer-events-none border-[#eee8dc] text-[#c9c1b2]"
+                  : "border-[#d9cfbc] text-[#12372a] hover:bg-[#f8f6ee]"
               }`}
             >
               Previous
             </Link>
-            <span className="text-sm text-gray-500">
+            <span className="text-sm font-medium text-[#6f6a5f]">
               Page {meta.page} of {meta.totalPages}
             </span>
             <Link
               href={buildPageLink(Math.min(meta.totalPages, Number(meta.page) + 1))}
-              className={`px-4 py-2 rounded-lg text-sm border ${
+              className={`rounded-xl border px-4 py-2 text-sm font-semibold ${
                 meta.hasMore
-                  ? "text-gray-600 border-gray-200 hover:bg-gray-50"
-                  : "pointer-events-none text-gray-300 border-gray-200"
+                  ? "border-[#d9cfbc] text-[#12372a] hover:bg-[#f8f6ee]"
+                  : "pointer-events-none border-[#eee8dc] text-[#c9c1b2]"
               }`}
             >
               Next
             </Link>
           </div>
         </section>
+      </div>
       </div>
     </div>
   );
