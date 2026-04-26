@@ -1,8 +1,14 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f7f5f0;
+  --foreground: #121826;
+  --surface: #ffffff;
+  --surface-muted: #f1efe7;
+  --border-soft: #e7e0d2;
+  --brand: #12372a;
+  --brand-ink: #f8f6ee;
+  --accent: #c7852b;
   color-scheme: light;
 }
 
@@ -13,17 +19,12 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
 
 html,
@@ -54,4 +55,41 @@ input::placeholder,
 textarea::placeholder {
   color: #94a3b8;
   opacity: 1;
+}
+
+::selection {
+  background: #12372a;
+  color: #fffaf0;
+}
+
+:focus-visible {
+  outline: 3px solid rgb(199 133 43 / 0.35);
+  outline-offset: 3px;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.page-shell {
+  margin-inline: auto;
+  width: min(100% - 2rem, 72rem);
+}
+
+.brand-mark {
+  display: inline-flex;
+  height: 2.5rem;
+  width: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.875rem;
+  background: var(--brand);
+  color: var(--brand-ink);
+  font-size: 0.875rem;
+  font-weight: 750;
+  box-shadow: 0 12px 30px rgb(18 55 42 / 0.18);
 }

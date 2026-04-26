@@ -56,7 +56,7 @@ export default function MobileNav({
         className={`inline-flex items-center gap-2 rounded-xl border px-3.5 py-2.5 text-sm font-medium transition-colors ${
           open
             ? "border-slate-900 bg-slate-900 text-white shadow-sm"
-            : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+            : "border-[#d9cfbc] bg-white text-[#39463d] shadow-sm hover:bg-[#f8f6ee]"
         }`}
       >
         {open ? <X size={16} /> : <Menu size={16} />}
@@ -69,20 +69,18 @@ export default function MobileNav({
           role="dialog"
           aria-modal="true"
           aria-label="Mobile navigation"
-          className="fixed inset-0 z-50 flex min-h-dvh flex-col overflow-y-auto bg-white"
+          className="fixed inset-0 z-50 flex min-h-dvh flex-col overflow-y-auto bg-[#f7f5f0]"
         >
-          <div className="flex items-center justify-between border-b border-slate-100 px-4 py-4">
+          <div className="flex items-center justify-between border-b border-[#e7e0d2] bg-white/75 px-4 py-4 backdrop-blur">
             <Link
               href="/"
               onClick={() => setOpen(false)}
               className="flex items-center gap-2"
             >
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-sm font-semibold text-white">
-                H
-              </span>
+              <span className="brand-mark">H</span>
               <div className="leading-tight">
-                <p className="text-sm font-semibold text-slate-900">Homeland</p>
-                <p className="text-[11px] text-slate-500">Trusted listings</p>
+                <p className="text-sm font-semibold text-[#121826]">Homeland</p>
+                <p className="text-[11px] text-[#6f6a5f]">Verified property marketplace</p>
               </div>
             </Link>
 
@@ -90,19 +88,19 @@ export default function MobileNav({
               type="button"
               aria-label="Close navigation menu"
               onClick={() => setOpen(false)}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-700 transition-colors hover:bg-slate-50"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#d9cfbc] bg-white text-[#39463d] transition-colors hover:bg-[#f8f6ee]"
             >
               <X size={18} />
             </button>
           </div>
 
-          <div className="flex-1 px-4 py-6">
-            <div className="mb-6">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-700">
-                Navigation
+          <div className="flex-1 px-4 py-7">
+            <div className="mb-7 rounded-[1.5rem] border border-[#e7e0d2] bg-white p-5 shadow-sm">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#9b641e]">
+                Menu
               </p>
-              <p className="mt-2 text-2xl font-semibold text-slate-950">
-                Where do you want to go?
+              <p className="mt-2 text-2xl font-semibold text-[#121826]">
+                Find, verify, and manage property faster.
               </p>
             </div>
 
@@ -112,7 +110,7 @@ export default function MobileNav({
                   key={link.href}
                   href={link.href}
                   onClick={() => setOpen(false)}
-                  className="flex items-center justify-between border-b border-slate-100 py-4 text-base font-medium text-slate-800 transition-colors hover:text-slate-950"
+                  className="flex items-center justify-between rounded-2xl border border-[#e7e0d2] bg-white px-4 py-4 text-base font-semibold text-[#29362e] shadow-sm transition-colors hover:border-[#cbbda3] hover:text-[#12372a]"
                 >
                   <span>{link.label}</span>
                   <ChevronRight size={18} className="text-slate-400" />
@@ -121,13 +119,13 @@ export default function MobileNav({
             </nav>
           </div>
 
-          <div className="border-t border-slate-100 bg-slate-50 px-4 py-5">
+          <div className="border-t border-[#e7e0d2] bg-white/80 px-4 py-5">
             <div className="grid gap-3">
               {showNewListing ? (
                 <Link
                   href="/agent/listings/new"
                   onClick={() => setOpen(false)}
-                  className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+                  className="inline-flex items-center justify-center rounded-xl border border-[#d9cfbc] bg-white px-4 py-3 text-sm font-semibold text-[#12372a] transition-colors hover:bg-[#f8f6ee]"
                 >
                   New listing
                 </Link>
@@ -137,7 +135,7 @@ export default function MobileNav({
                 <Link
                   href={dashboardHref}
                   onClick={() => setOpen(false)}
-                  className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+                  className="inline-flex items-center justify-center rounded-xl border border-[#d9cfbc] bg-white px-4 py-3 text-sm font-semibold text-[#12372a] transition-colors hover:bg-[#f8f6ee]"
                 >
                   Dashboard
                 </Link>
@@ -150,7 +148,7 @@ export default function MobileNav({
                     setOpen(false);
                     await signOut({ callbackUrl: "/" });
                   }}
-                  className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-slate-800"
+                  className="inline-flex items-center justify-center rounded-xl bg-[#12372a] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#0d2c21]"
                 >
                   Sign out
                 </button>
@@ -159,14 +157,14 @@ export default function MobileNav({
                   <Link
                     href="/login"
                     onClick={() => setOpen(false)}
-                    className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+                    className="inline-flex items-center justify-center rounded-xl border border-[#d9cfbc] bg-white px-4 py-3 text-sm font-semibold text-[#12372a] transition-colors hover:bg-[#f8f6ee]"
                   >
                     Sign in
                   </Link>
                   <Link
                     href="/register"
                     onClick={() => setOpen(false)}
-                    className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-slate-800"
+                    className="inline-flex items-center justify-center rounded-xl bg-[#12372a] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#0d2c21]"
                   >
                     Get started
                   </Link>

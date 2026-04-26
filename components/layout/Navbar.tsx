@@ -52,21 +52,23 @@ export default async function Navbar() {
           : null;
 
   return (
-    <header className="relative z-30 border-b border-gray-100 bg-white/80 backdrop-blur">
-      <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+    <header className="sticky top-0 z-30 border-b border-[#e7e0d2]/80 bg-[#f7f5f0]/90 backdrop-blur-xl">
+      <div className="page-shell flex items-center justify-between py-3.5">
         <Link href="/" className="flex items-center gap-2">
-          <span className="h-9 w-9 rounded-xl bg-slate-900 text-white flex items-center justify-center text-sm font-semibold">
-            H
-          </span>
+          <span className="brand-mark">H</span>
           <div className="leading-tight">
-            <p className="text-sm font-semibold text-gray-900">Homeland</p>
-            <p className="text-[11px] text-gray-500">Trusted listings</p>
+            <p className="text-sm font-semibold text-[#121826]">Homeland</p>
+            <p className="text-[11px] font-medium text-[#6f6a5f]">Verified property marketplace</p>
           </div>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-6 text-sm text-gray-600">
+        <nav className="hidden md:flex items-center gap-1 rounded-full border border-[#e7e0d2] bg-white/70 p-1 text-sm text-[#5f655f] shadow-sm shadow-stone-200/40">
           {navLinks.map((link) => (
-            <Link key={link.href} href={link.href} className="hover:text-gray-900">
+            <Link
+              key={link.href}
+              href={link.href}
+              className="rounded-full px-4 py-2 transition-colors hover:bg-[#f1efe7] hover:text-[#12372a]"
+            >
               {link.label}
             </Link>
           ))}
@@ -83,7 +85,7 @@ export default async function Navbar() {
           {role === "AGENT" ? (
             <Link
               href="/agent/listings/new"
-              className="hidden md:inline-flex px-3 py-2 text-sm rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50"
+              className="hidden rounded-full border border-[#d9cfbc] bg-white/70 px-4 py-2 text-sm font-medium text-[#12372a] shadow-sm transition-colors hover:bg-white md:inline-flex"
             >
               New listing
             </Link>
@@ -92,7 +94,7 @@ export default async function Navbar() {
           {dashboardHref ? (
             <Link
               href={dashboardHref}
-              className="hidden md:inline-flex px-3 py-2 text-sm rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50"
+              className="hidden rounded-full border border-[#d9cfbc] bg-white/70 px-4 py-2 text-sm font-medium text-[#12372a] shadow-sm transition-colors hover:bg-white md:inline-flex"
             >
               Dashboard
             </Link>
@@ -108,7 +110,7 @@ export default async function Navbar() {
             >
               <button
                 type="submit"
-                className="px-4 py-2 rounded-lg bg-slate-900 text-white text-sm font-medium hover:bg-slate-800"
+                className="rounded-full bg-[#12372a] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#0d2c21]"
               >
                 Sign out
               </button>
@@ -117,13 +119,13 @@ export default async function Navbar() {
             <div className="hidden md:flex items-center gap-2 text-sm">
               <Link
                 href="/login"
-                className="px-3 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50"
+                className="rounded-full border border-[#d9cfbc] bg-white/70 px-4 py-2 text-[#4f5b51] transition-colors hover:bg-white hover:text-[#12372a]"
               >
                 Sign in
               </Link>
               <Link
                 href="/register"
-                className="px-4 py-2 rounded-lg bg-slate-900 text-white font-medium hover:bg-slate-800"
+                className="rounded-full bg-[#12372a] px-4 py-2 font-semibold text-white shadow-sm transition-colors hover:bg-[#0d2c21]"
               >
                 Get started
               </Link>
