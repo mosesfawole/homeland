@@ -1,7 +1,7 @@
 import Link from "next/link";
 import PropertyCard, { type PropertyCardData } from "@/components/property/PropertyCard";
 import HeroSearch from "@/components/layout/HeroSearch";
-import { ShieldCheck, Sparkles, MapPin, CalendarCheck } from "lucide-react";
+import { ShieldCheck, Sparkles, MapPin, CalendarCheck, BadgeCheck, KeyRound } from "lucide-react";
 import { formatSupabaseError, getSupabaseAdmin } from "@/lib/supabase-server";
 import { unwrapRelation, type RelationValue } from "@/lib/utils/helpers";
 
@@ -112,74 +112,97 @@ export default async function LandingPage() {
   }
 
   return (
-    <div>
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.2),_transparent_55%)]" />
-        <div className="absolute -top-48 right-[-10%] h-96 w-96 rounded-full bg-emerald-200/40 blur-3xl" />
-        <div className="absolute top-40 left-[-5%] h-72 w-72 rounded-full bg-amber-200/40 blur-3xl" />
-
-        <div className="relative max-w-6xl mx-auto px-4 pt-16 pb-20 md:pt-24 md:pb-28">
-          <div className="max-w-3xl space-y-6">
-            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/80 border border-white text-xs font-medium text-slate-700">
+    <div className="bg-[#f7f5f0]">
+      <section className="relative overflow-hidden border-b border-[#e7e0d2]">
+        <div className="page-shell relative grid gap-10 pt-10 pb-14 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)] lg:items-center lg:pt-16 lg:pb-20">
+          <div className="space-y-7">
+            <span className="inline-flex w-fit items-center gap-2 rounded-full border border-[#d9cfbc] bg-white px-3 py-1.5 text-xs font-semibold text-[#12372a] shadow-sm">
               <Sparkles size={14} /> AI-assisted listings built for trust
             </span>
-            <h1 className="text-4xl md:text-5xl font-semibold text-slate-900 leading-tight">
-              Find verified homes and commercial spaces across Nigeria in minutes.
+            <h1 className="max-w-3xl text-4xl font-semibold leading-[1.05] text-[#121826] sm:text-5xl lg:text-6xl">
+              Rent or buy property with agents Homeland has checked.
             </h1>
-            <p className="text-base md:text-lg text-slate-600">
-              Homeland matches serious renters and buyers with verified agents. Search by location, property type, and
-              budget, then book tours instantly.
+            <p className="max-w-2xl text-base leading-7 text-[#5f655f] md:text-lg">
+              Search verified Nigerian homes, compare agent details, and book inspections without chasing random phone numbers.
             </p>
-          </div>
 
-          <div className="mt-10">
             <HeroSearch />
-            <div className="mt-6 flex flex-wrap gap-3 text-xs text-slate-500">
-              <span className="px-3 py-1 rounded-full bg-white/80 border border-white">24hr power</span>
-              <span className="px-3 py-1 rounded-full bg-white/80 border border-white">Lekki Phase 1</span>
-              <span className="px-3 py-1 rounded-full bg-white/80 border border-white">Serviced apartments</span>
-              <span className="px-3 py-1 rounded-full bg-white/80 border border-white">Mini flats</span>
+
+            <div className="flex flex-wrap gap-2 text-xs font-medium text-[#6f6a5f]">
+              <span className="rounded-full border border-[#e7e0d2] bg-white px-3 py-1.5">Lekki Phase 1</span>
+              <span className="rounded-full border border-[#e7e0d2] bg-white px-3 py-1.5">Ikeja GRA</span>
+              <span className="rounded-full border border-[#e7e0d2] bg-white px-3 py-1.5">Serviced apartments</span>
+              <span className="rounded-full border border-[#e7e0d2] bg-white px-3 py-1.5">Annual rent</span>
             </div>
           </div>
 
-          <div className="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="rounded-2xl bg-white/90 border border-white p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Active listings</p>
-              <p className="text-2xl font-semibold text-slate-900 mt-2">{totalListings}</p>
-              <p className="text-xs text-slate-500 mt-1">Verified listings ready to tour.</p>
+          <div className="rounded-[2rem] border border-[#e7e0d2] bg-[#12372a] p-4 text-white shadow-[0_24px_80px_rgba(18,55,42,0.2)]">
+            <div className="rounded-[1.5rem] border border-white/10 bg-white/8 p-5">
+              <div className="flex items-center justify-between">
+                <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#12372a]">
+                  Inspection ready
+                </span>
+                <span className="text-xs text-white/55">Lagos, Nigeria</span>
+              </div>
+              <div className="mt-12">
+                <p className="text-sm text-white/65">3 bedroom apartment</p>
+                <p className="mt-2 text-3xl font-semibold">NGN 3.5M / year</p>
+              </div>
+              <div className="mt-6 grid grid-cols-3 gap-2 text-xs">
+                {["KYC agent", "Verified listing", "Tour booking"].map((item) => (
+                  <div key={item} className="rounded-2xl bg-white/10 p-3 text-white/75">
+                    {item}
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="rounded-2xl bg-white/90 border border-white p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Verified agents</p>
-              <p className="text-2xl font-semibold text-slate-900 mt-2">{verifiedAgents}</p>
-              <p className="text-xs text-slate-500 mt-1">KYC checked professionals.</p>
+            <div className="mt-4 grid grid-cols-3 gap-3">
+              <div className="rounded-2xl bg-white p-4 text-[#121826]">
+                <p className="text-2xl font-semibold">{totalListings}</p>
+                <p className="mt-1 text-xs text-[#6f6a5f]">Active listings</p>
+              </div>
+              <div className="rounded-2xl bg-white p-4 text-[#121826]">
+                <p className="text-2xl font-semibold">{verifiedAgents}</p>
+                <p className="mt-1 text-xs text-[#6f6a5f]">Verified agents</p>
+              </div>
+              <div className="rounded-2xl bg-white p-4 text-[#121826]">
+                <p className="text-2xl font-semibold">24h</p>
+                <p className="mt-1 text-xs text-[#6f6a5f]">Fraud review</p>
+              </div>
             </div>
-            <div className="rounded-2xl bg-white/90 border border-white p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Trusted platform</p>
-              <p className="text-2xl font-semibold text-slate-900 mt-2">100% secure</p>
-              <p className="text-xs text-slate-500 mt-1">Report fraud and verify listings.</p>
+            <div className="mt-4 rounded-[1.5rem] bg-white p-4 text-[#121826]">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#f1efe7] text-[#12372a]">
+                  <BadgeCheck size={18} />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold">Verified by Homeland</p>
+                  <p className="text-xs text-[#6f6a5f]">Agent checks, listing review, and report tools.</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="max-w-6xl mx-auto px-4 py-16">
+      <section className="page-shell py-16">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h2 className="text-2xl font-semibold text-slate-900">Featured listings</h2>
-            <p className="text-sm text-slate-500 mt-1">
-              Handpicked homes and offices vetted by Homeland.
+            <h2 className="text-3xl font-semibold text-[#121826]">Featured listings</h2>
+            <p className="mt-2 text-sm text-[#6f6a5f]">
+              Handpicked homes and offices vetted before they go live.
             </p>
           </div>
           <Link
             href="/search"
-            className="hidden sm:inline-flex px-4 py-2 rounded-lg border border-slate-200 text-sm text-slate-600 hover:bg-slate-50"
+            className="hidden rounded-full border border-[#d9cfbc] bg-white px-4 py-2 text-sm font-semibold text-[#12372a] shadow-sm hover:bg-[#f8f6ee] sm:inline-flex"
           >
             View all
           </Link>
         </div>
 
         {featuredCards.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-10 text-center text-sm text-slate-500">
+          <div className="rounded-[1.75rem] border border-dashed border-[#d9cfbc] bg-white p-10 text-center text-sm text-[#6f6a5f]">
             Featured listings will appear here once approved.
           </div>
         ) : (
@@ -191,41 +214,41 @@ export default async function LandingPage() {
         )}
       </section>
 
-      <section className="bg-slate-900 text-white">
-        <div className="max-w-6xl mx-auto px-4 py-16 grid gap-8 md:grid-cols-3">
+      <section className="border-y border-[#e7e0d2] bg-white text-[#121826]">
+        <div className="page-shell grid gap-5 py-14 md:grid-cols-3">
           {[
             {
-              title: "Verified by default",
-              copy: "Every agent goes through KYC checks. Listings remain hidden until approved.",
+              title: "KYC checked agents",
+              copy: "Agents submit verification details before managing trusted listings.",
               icon: <ShieldCheck size={20} />,
             },
             {
-              title: "Smart AI parser",
-              copy: "Paste a description, and we structure bedrooms, prices, and features instantly.",
-              icon: <Sparkles size={20} />,
-            },
-            {
-              title: "Tour scheduling",
-              copy: "Users can request inspections and get confirmations without endless calls.",
+              title: "Inspection workflow",
+              copy: "Users request tours and keep booking activity inside their dashboard.",
               icon: <CalendarCheck size={20} />,
             },
+            {
+              title: "Fraud reporting",
+              copy: "Suspicious listings can be reported for admin review before they waste anyone's time.",
+              icon: <KeyRound size={20} />,
+            },
           ].map((item) => (
-            <div key={item.title} className="rounded-2xl bg-white/5 border border-white/10 p-6">
-              <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center">
+            <div key={item.title} className="rounded-[1.5rem] border border-[#e7e0d2] bg-[#fbfaf7] p-6">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#12372a] text-white">
                 {item.icon}
               </div>
               <h3 className="mt-4 text-lg font-semibold">{item.title}</h3>
-              <p className="mt-2 text-sm text-white/70">{item.copy}</p>
+              <p className="mt-2 text-sm leading-6 text-[#6f6a5f]">{item.copy}</p>
             </div>
           ))}
         </div>
       </section>
 
-      <section className="max-w-6xl mx-auto px-4 py-16">
+      <section className="page-shell py-16">
         <div className="grid gap-10 md:grid-cols-[1.1fr_0.9fr] items-center">
           <div className="space-y-4">
-            <h2 className="text-2xl font-semibold text-slate-900">How Homeland works</h2>
-            <p className="text-sm text-slate-600">
+            <h2 className="text-3xl font-semibold text-[#121826]">How Homeland works</h2>
+            <p className="text-sm leading-6 text-[#6f6a5f]">
               From listing to tour confirmations, we keep everything verified and transparent.
             </p>
             <div className="space-y-4">
@@ -244,45 +267,45 @@ export default async function LandingPage() {
                 },
               ].map((item, index) => (
                 <div key={item.title} className="flex gap-4">
-                  <div className="mt-1 h-9 w-9 rounded-full bg-slate-900 text-white text-sm flex items-center justify-center">
+                  <div className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#12372a] text-sm text-white">
                     {index + 1}
                   </div>
                   <div>
-                    <h3 className="text-base font-semibold text-slate-900">{item.title}</h3>
-                    <p className="text-sm text-slate-500 mt-1">{item.copy}</p>
+                    <h3 className="text-base font-semibold text-[#121826]">{item.title}</h3>
+                    <p className="mt-1 text-sm leading-6 text-[#6f6a5f]">{item.copy}</p>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="rounded-3xl bg-white border border-slate-100 p-6 shadow-xl shadow-slate-100">
+          <div className="rounded-[2rem] border border-[#e7e0d2] bg-white p-6 shadow-xl shadow-stone-200/70">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#f1efe7] text-[#12372a]">
                 <MapPin size={18} />
               </div>
               <div>
-                <p className="text-sm font-semibold text-slate-900">Tour request ready</p>
-                <p className="text-xs text-slate-500">3 bedroom apartment, Ikeja GRA</p>
+                <p className="text-sm font-semibold text-[#121826]">Tour request ready</p>
+                <p className="text-xs text-[#6f6a5f]">3 bedroom apartment, Ikeja GRA</p>
               </div>
             </div>
             <div className="mt-6 space-y-3 text-sm">
               <div className="flex items-center justify-between">
-                <span className="text-slate-500">Price</span>
-                <span className="font-semibold text-slate-900">NGN 3.5M / year</span>
+                <span className="text-[#6f6a5f]">Price</span>
+                <span className="font-semibold text-[#121826]">NGN 3.5M / year</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-500">Agent</span>
-                <span className="font-semibold text-slate-900">Verified by Homeland</span>
+                <span className="text-[#6f6a5f]">Agent</span>
+                <span className="font-semibold text-[#121826]">Verified by Homeland</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-500">Next slot</span>
-                <span className="font-semibold text-slate-900">Tomorrow, 11:00</span>
+                <span className="text-[#6f6a5f]">Next slot</span>
+                <span className="font-semibold text-[#121826]">Tomorrow, 11:00</span>
               </div>
             </div>
             <Link
               href="/search"
-              className="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800"
+              className="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-[#12372a] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0d2c21]"
             >
               Start searching
             </Link>
