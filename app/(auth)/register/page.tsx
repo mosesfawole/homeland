@@ -7,11 +7,11 @@ export const metadata = {
 export default function RegisterPage() {
   return (
     <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">
+        <div className="mb-8 text-center">
+          <h1 className="text-2xl font-semibold text-[#121826]">
             Create an account
           </h1>
-          <p className="text-gray-500 mt-1 text-sm">
+          <p className="mt-1 text-sm text-[#6f6a5f]">
             Join Homeland to find or list properties
           </p>
         </div>

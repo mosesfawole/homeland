@@ -16,6 +16,8 @@ export default function ResetPasswordForm() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const inputClass =
+    "w-full rounded-xl border border-[#e7e0d2] bg-[#fbfaf7] px-4 py-3 text-sm outline-none transition-colors focus:border-[#c7852b] focus:bg-white";
 
   const hasToken = useMemo(() => token.trim().length > 0, [token]);
 
@@ -72,21 +74,21 @@ export default function ResetPasswordForm() {
   return (
     <form
       onSubmit={onSubmit}
-      className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 space-y-5"
+      className="space-y-5 rounded-[1.75rem] border border-[#e7e0d2] bg-white p-6 shadow-xl shadow-stone-200/70 sm:p-8"
     >
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       )}
       {message && (
-        <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm px-4 py-3 rounded-lg">
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
           {message}
         </div>
       )}
 
       <div className="space-y-1.5">
-        <label className="text-sm font-medium text-gray-700">
+        <label className="text-sm font-semibold text-[#39463d]">
           Email address
         </label>
         <input
@@ -94,13 +96,13 @@ export default function ResetPasswordForm() {
           placeholder="you@example.com"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
-          className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50 transition-colors"
+          className={inputClass}
           required
         />
       </div>
 
       <div className="space-y-1.5">
-        <label className="text-sm font-medium text-gray-700">
+        <label className="text-sm font-semibold text-[#39463d]">
           New password
         </label>
         <input
@@ -108,13 +110,13 @@ export default function ResetPasswordForm() {
           placeholder="********"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
-          className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50 transition-colors"
+          className={inputClass}
           required
         />
       </div>
 
       <div className="space-y-1.5">
-        <label className="text-sm font-medium text-gray-700">
+        <label className="text-sm font-semibold text-[#39463d]">
           Confirm password
         </label>
         <input
@@ -122,7 +124,7 @@ export default function ResetPasswordForm() {
           placeholder="********"
           value={confirmPassword}
           onChange={(event) => setConfirmPassword(event.target.value)}
-          className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50 transition-colors"
+          className={inputClass}
           required
         />
       </div>
@@ -130,16 +132,16 @@ export default function ResetPasswordForm() {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-medium py-2.5 rounded-lg text-sm transition-colors"
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#12372a] py-3 text-sm font-semibold text-white transition-colors hover:bg-[#0d2c21] disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isSubmitting ? "Saving..." : "Update password"}
       </button>
 
-      <p className="text-center text-sm text-gray-500">
+      <p className="text-center text-sm text-[#6f6a5f]">
         Need a new link?{" "}
         <Link
           href="/forgot-password"
-          className="text-blue-600 hover:underline font-medium"
+          className="font-semibold text-[#12372a] hover:underline"
         >
           Request reset
         </Link>

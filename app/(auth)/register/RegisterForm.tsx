@@ -19,6 +19,8 @@ export default function RegisterForm() {
     formState: { errors, isSubmitting },
   } = useForm<RegisterInput>({ resolver: zodResolver(registerSchema) });
   const roleRegistration = register("role");
+  const inputClass =
+    "w-full rounded-xl border border-[#e7e0d2] bg-[#fbfaf7] px-4 py-3 text-sm outline-none transition-colors focus:border-[#c7852b] focus:bg-white";
 
   const onSubmit = async (data: RegisterInput) => {
     setServerError(null);
@@ -44,23 +46,23 @@ export default function RegisterForm() {
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 space-y-5"
+      className="space-y-5 rounded-[1.75rem] border border-[#e7e0d2] bg-white p-6 shadow-xl shadow-stone-200/70 sm:p-8"
     >
       {serverError && (
-        <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {serverError}
         </div>
       )}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-gray-700">I am a...</label>
+        <label className="text-sm font-semibold text-[#39463d]">I am a...</label>
         <div className="grid grid-cols-2 gap-3">
           {(["USER", "AGENT"] as const).map((role) => (
             <label
               key={role}
-              className={`flex items-center justify-center gap-2 border rounded-lg py-3 text-sm font-medium cursor-pointer transition-colors ${
+              className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl border py-3 text-sm font-semibold transition-colors ${
                 selectedRole === role
-                  ? "border-blue-500 bg-blue-50 text-blue-700"
-                  : "border-gray-200 text-gray-600 hover:border-gray-300"
+                  ? "border-[#12372a] bg-[#f1efe7] text-[#12372a]"
+                  : "border-[#e7e0d2] text-[#6f6a5f] hover:border-[#d9cfbc]"
               }`}
             >
               <input
@@ -83,12 +85,12 @@ export default function RegisterForm() {
       </div>
 
       <div className="space-y-1.5">
-        <label className="text-sm font-medium text-gray-700">Full name</label>
+        <label className="text-sm font-semibold text-[#39463d]">Full name</label>
         <input
           type="text"
           placeholder="John Doe"
           {...register("name")}
-          className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50 transition-colors"
+          className={inputClass}
         />
         {errors.name && (
           <p className="text-xs text-red-500">{errors.name.message}</p>
@@ -96,14 +98,14 @@ export default function RegisterForm() {
       </div>
 
       <div className="space-y-1.5">
-        <label className="text-sm font-medium text-gray-700">
+        <label className="text-sm font-semibold text-[#39463d]">
           Email address
         </label>
         <input
           type="email"
           placeholder="you@example.com"
           {...register("email")}
-          className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50 transition-colors"
+          className={inputClass}
         />
         {errors.email && (
           <p className="text-xs text-red-500">{errors.email.message}</p>
@@ -111,18 +113,18 @@ export default function RegisterForm() {
       </div>
 
       <div className="space-y-1.5">
-        <label className="text-sm font-medium text-gray-700">Password</label>
+        <label className="text-sm font-semibold text-[#39463d]">Password</label>
         <div className="relative">
           <input
             type={showPass ? "text" : "password"}
             placeholder="Min. 8 characters"
             {...register("password")}
-            className="w-full px-4 py-2.5 pr-10 rounded-lg border border-gray-200 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50 transition-colors"
+            className={`${inputClass} pr-10`}
           />
           <button
             type="button"
             onClick={() => setShowPass(!showPass)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#918a7a] hover:text-[#12372a]"
           >
             {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
           </button>
@@ -133,14 +135,14 @@ export default function RegisterForm() {
       </div>
 
       <div className="space-y-1.5">
-        <label className="text-sm font-medium text-gray-700">
+        <label className="text-sm font-semibold text-[#39463d]">
           Confirm password
         </label>
         <input
           type="password"
           placeholder="********"
           {...register("confirmPassword")}
-          className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50 transition-colors"
+          className={inputClass}
         />
         {errors.confirmPassword && (
           <p className="text-xs text-red-500">
@@ -152,17 +154,17 @@ export default function RegisterForm() {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-medium py-2.5 rounded-lg text-sm transition-colors"
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#12372a] py-3 text-sm font-semibold text-white transition-colors hover:bg-[#0d2c21] disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isSubmitting && <Loader2 size={15} className="animate-spin" />}
         {isSubmitting ? "Creating account..." : "Create Account"}
       </button>
 
-      <p className="text-center text-sm text-gray-500">
+      <p className="text-center text-sm text-[#6f6a5f]">
         Already have an account?{" "}
         <Link
           href="/login"
-          className="text-blue-600 hover:underline font-medium"
+          className="font-semibold text-[#12372a] hover:underline"
         >
           Sign in
         </Link>

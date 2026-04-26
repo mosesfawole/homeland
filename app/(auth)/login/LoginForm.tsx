@@ -34,6 +34,9 @@ export default function LoginForm() {
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<LoginInput>({ resolver: zodResolver(loginSchema) });
+  const inputClass =
+    "w-full rounded-xl border border-[#e7e0d2] bg-[#fbfaf7] px-4 py-3 text-sm outline-none transition-colors focus:border-[#c7852b] focus:bg-white";
+  const noticeClass = "rounded-xl border px-4 py-3 text-sm";
 
   const onSubmit = async (data: LoginInput) => {
     setAuthError(null);
@@ -77,43 +80,43 @@ export default function LoginForm() {
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 space-y-5"
+      className="space-y-5 rounded-[1.75rem] border border-[#e7e0d2] bg-white p-6 shadow-xl shadow-stone-200/70 sm:p-8"
     >
       {authError && (
-        <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">
+        <div className={`${noticeClass} border-red-200 bg-red-50 text-red-700`}>
           {authError}
         </div>
       )}
       {verified === "1" && (
-        <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm px-4 py-3 rounded-lg">
+        <div className={`${noticeClass} border-emerald-200 bg-emerald-50 text-emerald-700`}>
           Email verified. You can sign in now.
         </div>
       )}
       {verified === "0" && (
-        <div className="bg-amber-50 border border-amber-200 text-amber-700 text-sm px-4 py-3 rounded-lg">
+        <div className={`${noticeClass} border-amber-200 bg-amber-50 text-amber-700`}>
           Verification link expired or invalid. Please sign up again.
         </div>
       )}
       {pending === "1" && (
-        <div className="bg-blue-50 border border-blue-200 text-blue-700 text-sm px-4 py-3 rounded-lg">
-          Check your email to verify your account before signing in.
+        <div className={`${noticeClass} border-[#d9cfbc] bg-[#f8f6ee] text-[#12372a]`}>
+          Check your email to verify your account. You can still sign in while verification is pending.
         </div>
       )}
       {reset === "1" && (
-        <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm px-4 py-3 rounded-lg">
+        <div className={`${noticeClass} border-emerald-200 bg-emerald-50 text-emerald-700`}>
           Password updated. You can sign in now.
         </div>
       )}
 
       <div className="space-y-1.5">
-        <label className="text-sm font-medium text-gray-700">
+        <label className="text-sm font-semibold text-[#39463d]">
           Email address
         </label>
         <input
           type="email"
           placeholder="you@example.com"
           {...register("email")}
-          className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50 transition-colors"
+          className={inputClass}
         />
         {errors.email && (
           <p className="text-xs text-red-500">{errors.email.message}</p>
@@ -121,18 +124,18 @@ export default function LoginForm() {
       </div>
 
       <div className="space-y-1.5">
-        <label className="text-sm font-medium text-gray-700">Password</label>
+        <label className="text-sm font-semibold text-[#39463d]">Password</label>
         <div className="relative">
           <input
             type={showPass ? "text" : "password"}
             placeholder="********"
             {...register("password")}
-            className="w-full px-4 py-2.5 pr-10 rounded-lg border border-gray-200 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50 transition-colors"
+            className={`${inputClass} pr-10`}
           />
           <button
             type="button"
             onClick={() => setShowPass(!showPass)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#918a7a] hover:text-[#12372a]"
           >
             {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
           </button>
@@ -145,26 +148,26 @@ export default function LoginForm() {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-medium py-2.5 rounded-lg text-sm transition-colors"
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#12372a] py-3 text-sm font-semibold text-white transition-colors hover:bg-[#0d2c21] disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isSubmitting && <Loader2 size={15} className="animate-spin" />}
         {isSubmitting ? "Signing in..." : "Sign In"}
       </button>
 
-      <p className="text-center text-sm text-gray-500">
+      <p className="text-center text-sm text-[#6f6a5f]">
         Don&apos;t have an account?{" "}
         <Link
           href="/register"
-          className="text-blue-600 hover:underline font-medium"
+          className="font-semibold text-[#12372a] hover:underline"
         >
           Create one
         </Link>
       </p>
-      <p className="text-center text-sm text-gray-500">
+      <p className="text-center text-sm text-[#6f6a5f]">
         Forgot your password?{" "}
         <Link
           href="/forgot-password"
-          className="text-blue-600 hover:underline font-medium"
+          className="font-semibold text-[#12372a] hover:underline"
         >
           Reset it
         </Link>
