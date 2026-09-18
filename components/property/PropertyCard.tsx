@@ -31,6 +31,7 @@ export interface PropertyCardData {
     verificationStatus: string;
     user: { name: string | null; avatar: string | null };
   };
+  isPlaceholder?: boolean;
 }
 
 interface Props {
@@ -49,7 +50,7 @@ export default function PropertyCard({ property }: Props) {
 
   return (
     <Link
-      href={`/property/${property.id}`}
+      href={property.isPlaceholder ? "/search" : `/property/${property.id}`}
       className="group block overflow-hidden rounded-2xl border border-[#d9dfd6] bg-white shadow-sm shadow-stone-200/50 transition duration-300 hover:-translate-y-1 hover:border-[#b8c9bd] hover:shadow-xl hover:shadow-stone-200/80"
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-[#e9eee8]">
@@ -62,16 +63,29 @@ export default function PropertyCard({ property }: Props) {
             sizes="(max-width: 768px) 100vw, 33vw"
           />
         ) : (
-            <div className="flex h-full w-full items-center justify-center bg-[#164b3a] text-sm font-medium text-white/70">
-            Image pending
+            <div className="relative flex h-full w-full items-end overflow-hidden bg-[#164b3a] p-5 text-white">
+              <div className="absolute -right-8 -top-12 h-44 w-44 rounded-full border-[18px] border-[#e8754f]/70" />
+              <div className="absolute right-8 top-10 h-20 w-20 rounded-full bg-[#e8c98d]/80 blur-[1px]" />
+              <div className="relative">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/55">
+                  Sample preview
+                </p>
+                <p className="mt-1 text-sm font-semibold text-white/90">
+                  Photography appears after approval
+                </p>
+              </div>
           </div>
         )}
 
         <div className="absolute inset-x-3 top-3 flex items-center justify-between gap-2">
           <span className="rounded-lg bg-white/95 px-3 py-1 text-xs font-semibold text-[#164b3a] shadow-sm">
-            {property.listingType === "RENT" ? "For Rent" : "For Sale"}
+            {property.isPlaceholder
+              ? "Sample listing"
+              : property.listingType === "RENT"
+                ? "For Rent"
+                : "For Sale"}
           </span>
-          {property.isFeatured && (
+          {property.isFeatured && !property.isPlaceholder && (
             <span className="rounded-lg bg-[#e8754f] px-3 py-1 text-xs font-semibold text-white shadow-sm">
               Featured
             </span>
@@ -133,6 +147,9 @@ export default function PropertyCard({ property }: Props) {
               <span className="mt-1 inline-flex items-center gap-1 text-[#167a52]">
                 <BadgeCheck size={12} /> Verified
               </span>
+            )}
+            {property.isPlaceholder && (
+              <span className="mt-1 block text-[#e8754f]">Preview data</span>
             )}
           </div>
           <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#164b3a] text-white transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5">

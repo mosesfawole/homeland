@@ -16,6 +16,81 @@ type LandingAgentProfile = {
   user: RelationValue<AgentUserSummary>;
 };
 
+const placeholderProperties: PropertyCardData[] = [
+  {
+    id: "sample-lekki-courtyard",
+    title: "Sunlit courtyard home in Lekki Phase 1",
+    propertyType: "APARTMENT",
+    listingType: "RENT",
+    bedrooms: 3,
+    bathrooms: 3,
+    price: 4500000,
+    rentDuration: "YEARLY",
+    address: "Admiralty Way, Lekki Phase 1",
+    city: "Lagos",
+    state: "Lagos",
+    neighborhood: "Lekki Phase 1",
+    isFeatured: true,
+    createdAt: "2026-09-18T00:00:00.000Z",
+    verificationStatus: "PREVIEW",
+    images: [],
+    agentProfile: {
+      agencyName: "Homeland sample listing",
+      verificationStatus: "PREVIEW",
+      user: { name: "Homeland Preview", avatar: null },
+    },
+    isPlaceholder: true,
+  },
+  {
+    id: "sample-ikeja-gra-villa",
+    title: "Quiet garden villa near Ikeja GRA",
+    propertyType: "HOUSE",
+    listingType: "SALE",
+    bedrooms: 4,
+    bathrooms: 4,
+    price: 185000000,
+    rentDuration: null,
+    address: "Isaac John Street, Ikeja GRA",
+    city: "Ikeja",
+    state: "Lagos",
+    neighborhood: "Ikeja GRA",
+    isFeatured: true,
+    createdAt: "2026-09-18T00:00:00.000Z",
+    verificationStatus: "PREVIEW",
+    images: [],
+    agentProfile: {
+      agencyName: "Homeland sample listing",
+      verificationStatus: "PREVIEW",
+      user: { name: "Homeland Preview", avatar: null },
+    },
+    isPlaceholder: true,
+  },
+  {
+    id: "sample-yaba-studio",
+    title: "Smart studio for city living in Yaba",
+    propertyType: "APARTMENT",
+    listingType: "RENT",
+    bedrooms: 1,
+    bathrooms: 1,
+    price: 2200000,
+    rentDuration: "YEARLY",
+    address: "Herbert Macaulay Way, Yaba",
+    city: "Lagos",
+    state: "Lagos",
+    neighborhood: "Yaba",
+    isFeatured: true,
+    createdAt: "2026-09-18T00:00:00.000Z",
+    verificationStatus: "PREVIEW",
+    images: [],
+    agentProfile: {
+      agencyName: "Homeland sample listing",
+      verificationStatus: "PREVIEW",
+      user: { name: "Homeland Preview", avatar: null },
+    },
+    isPlaceholder: true,
+  },
+];
+
 export const metadata = {
   title: "Homeland - Verified Nigerian Properties",
   description:
@@ -109,6 +184,10 @@ export default async function LandingPage() {
 
   } catch (error) {
     console.error("[LandingPage] Failed to load featured listings", error);
+  }
+
+  if (featuredCards.length === 0) {
+    featuredCards = placeholderProperties;
   }
 
   return (
