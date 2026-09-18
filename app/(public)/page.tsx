@@ -112,23 +112,25 @@ export default async function LandingPage() {
   }
 
   return (
-    <div className="bg-[#f7f5f0]">
-      <section className="relative overflow-hidden border-b border-[#e7e0d2]">
-        <div className="page-shell relative grid gap-10 pt-10 pb-14 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)] lg:items-center lg:pt-16 lg:pb-20">
+    <div className="bg-[#f4f1eb]">
+      <section className="relative overflow-hidden border-b border-[#d9dfd6] bg-[radial-gradient(circle_at_78%_20%,rgba(232,117,79,0.12),transparent_28%),linear-gradient(135deg,#f4f1eb_0%,#eef3ed_100%)]">
+        <div className="page-shell relative grid gap-10 pt-12 pb-16 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)] lg:items-center lg:pt-20 lg:pb-24">
           <div className="space-y-7">
-            <span className="inline-flex w-fit items-center gap-2 rounded-full border border-[#d9cfbc] bg-white px-3 py-1.5 text-xs font-semibold text-[#12372a] shadow-sm">
+            <span className="motion-reveal inline-flex w-fit items-center gap-2 rounded-full border border-[#d9cfbc] bg-white px-3 py-1.5 text-xs font-semibold text-[#12372a] shadow-sm">
               <Sparkles size={14} /> AI-assisted listings built for trust
             </span>
-            <h1 className="max-w-3xl text-4xl font-semibold leading-[1.05] text-[#121826] sm:text-5xl lg:text-6xl">
+            <h1 className="motion-reveal motion-reveal-delay-1 display-heading max-w-3xl text-5xl leading-[0.98] text-[#17221d] sm:text-6xl lg:text-7xl">
               Rent or buy property with agents Homeland has checked.
             </h1>
-            <p className="max-w-2xl text-base leading-7 text-[#5f655f] md:text-lg">
+            <p className="motion-reveal motion-reveal-delay-2 max-w-2xl text-base leading-7 text-[#5f655f] md:text-lg">
               Search verified Nigerian homes, compare agent details, and book inspections without chasing random phone numbers.
             </p>
 
-            <HeroSearch />
+            <div className="motion-reveal motion-reveal-delay-2">
+              <HeroSearch />
+            </div>
 
-            <div className="flex flex-wrap gap-2 text-xs font-medium text-[#6f6a5f]">
+            <div className="motion-reveal motion-reveal-delay-3 flex flex-wrap gap-2 text-xs font-medium text-[#6f6a5f]">
               <span className="rounded-full border border-[#e7e0d2] bg-white px-3 py-1.5">Lekki Phase 1</span>
               <span className="rounded-full border border-[#e7e0d2] bg-white px-3 py-1.5">Ikeja GRA</span>
               <span className="rounded-full border border-[#e7e0d2] bg-white px-3 py-1.5">Serviced apartments</span>
@@ -136,7 +138,7 @@ export default async function LandingPage() {
             </div>
           </div>
 
-          <div className="rounded-[2rem] border border-[#e7e0d2] bg-[#12372a] p-4 text-white shadow-[0_24px_80px_rgba(18,55,42,0.2)]">
+          <div className="motion-reveal motion-reveal-delay-2 motion-float rounded-[1.75rem] border border-[#0e392b] bg-[#164b3a] p-4 text-white shadow-[0_24px_80px_rgba(22,75,58,0.24)]">
             <div className="rounded-[1.5rem] border border-white/10 bg-white/8 p-5">
               <div className="flex items-center justify-between">
                 <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#12372a]">
@@ -188,7 +190,7 @@ export default async function LandingPage() {
       <section className="page-shell py-16">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h2 className="text-3xl font-semibold text-[#121826]">Featured listings</h2>
+            <h2 className="display-heading text-4xl text-[#17221d]">Featured listings</h2>
             <p className="mt-2 text-sm text-[#6f6a5f]">
               Handpicked homes and offices vetted before they go live.
             </p>
@@ -206,7 +208,7 @@ export default async function LandingPage() {
             Featured listings will appear here once approved.
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          <div className="motion-stagger grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
             {featuredCards.map((property) => (
               <PropertyCard key={property.id} property={property} />
             ))}
@@ -214,7 +216,7 @@ export default async function LandingPage() {
         )}
       </section>
 
-      <section className="border-y border-[#e7e0d2] bg-white text-[#121826]">
+      <section className="border-y border-[#d9dfd6] bg-[#e9eee8] text-[#17221d]">
         <div className="page-shell grid gap-5 py-14 md:grid-cols-3">
           {[
             {
@@ -233,7 +235,7 @@ export default async function LandingPage() {
               icon: <KeyRound size={20} />,
             },
           ].map((item) => (
-            <div key={item.title} className="rounded-[1.5rem] border border-[#e7e0d2] bg-[#fbfaf7] p-6">
+            <div key={item.title} className="rounded-2xl border border-[#d9dfd6] bg-white/70 p-6">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#12372a] text-white">
                 {item.icon}
               </div>
@@ -247,7 +249,7 @@ export default async function LandingPage() {
       <section className="page-shell py-16">
         <div className="grid gap-10 md:grid-cols-[1.1fr_0.9fr] items-center">
           <div className="space-y-4">
-            <h2 className="text-3xl font-semibold text-[#121826]">How Homeland works</h2>
+            <h2 className="display-heading text-4xl text-[#17221d]">How Homeland works</h2>
             <p className="text-sm leading-6 text-[#6f6a5f]">
               From listing to tour confirmations, we keep everything verified and transparent.
             </p>

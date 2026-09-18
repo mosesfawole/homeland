@@ -37,7 +37,7 @@ export default function HeroSearch() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="w-full rounded-[1.75rem] border border-[#e7e0d2] bg-white p-3 shadow-[0_24px_80px_rgba(18,24,38,0.12)] md:p-4"
+      className="w-full rounded-2xl border border-[#d9dfd6] bg-white p-3 shadow-[0_24px_80px_rgba(23,34,29,0.12)] md:p-4"
     >
       <div className="grid gap-3 lg:grid-cols-[1.4fr_1fr_1fr_auto]">
         <div className="relative">
@@ -54,7 +54,7 @@ export default function HeroSearch() {
             value={query}
             onChange={(event) => setFilters({ query: event.target.value })}
             placeholder="Lekki Phase 1, Ikoyi, serviced apartment"
-            className="h-13 w-full rounded-2xl border border-[#e7e0d2] bg-[#fbfaf7] px-11 text-sm font-medium outline-none transition-colors focus:border-[#c7852b] focus:bg-white"
+            className="h-13 w-full rounded-xl border border-[#d9dfd6] bg-[#f7f8f5] px-11 text-sm font-medium outline-none transition-colors focus:border-[#e8754f] focus:bg-white"
           />
         </div>
 
@@ -66,7 +66,7 @@ export default function HeroSearch() {
             id="search-state"
             value={state}
             onChange={(event) => setFilters({ state: event.target.value })}
-            className="h-13 w-full rounded-2xl border border-[#e7e0d2] bg-[#fbfaf7] px-4 text-sm font-medium"
+            className="h-13 w-full rounded-xl border border-[#d9dfd6] bg-[#f7f8f5] px-4 text-sm font-medium"
           >
             <option value="">All states</option>
             {NIGERIAN_STATES.map((item) => (
@@ -85,7 +85,7 @@ export default function HeroSearch() {
             id="search-property"
             value={propertyType}
             onChange={(event) => setFilters({ propertyType: event.target.value })}
-            className="h-13 w-full rounded-2xl border border-[#e7e0d2] bg-[#fbfaf7] px-4 text-sm font-medium"
+            className="h-13 w-full rounded-xl border border-[#d9dfd6] bg-[#f7f8f5] px-4 text-sm font-medium"
           >
             <option value="">Any property</option>
             {Object.entries(PROPERTY_TYPE_LABELS).map(([value, label]) => (
@@ -98,7 +98,7 @@ export default function HeroSearch() {
 
         <button
           type="submit"
-          className="inline-flex h-13 items-center justify-center gap-2 rounded-2xl bg-[#12372a] px-6 text-sm font-semibold text-white shadow-lg shadow-emerald-950/15 transition-colors hover:bg-[#0d2c21]"
+          className="inline-flex h-13 items-center justify-center gap-2 rounded-xl bg-[#164b3a] px-6 text-sm font-semibold text-white shadow-lg shadow-emerald-950/15 transition-colors hover:bg-[#0e392b]"
         >
           <Search size={17} />
           Search

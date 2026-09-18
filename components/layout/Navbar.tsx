@@ -52,24 +52,24 @@ export default async function Navbar() {
           : null;
 
   return (
-    <header className="sticky top-0 z-30 border-b border-[#e7e0d2]/80 bg-[#f7f5f0]/90 backdrop-blur-xl">
+    <header className="sticky top-0 z-30 border-b border-[#d9dfd6]/80 bg-[#f4f1eb]/90 backdrop-blur-xl">
       <div className="page-shell flex min-w-0 items-center justify-between gap-3 py-3.5">
         <Link href="/" className="flex min-w-0 items-center gap-2">
           <span className="brand-mark">H</span>
           <div className="min-w-0 leading-tight">
-            <p className="truncate text-sm font-semibold text-[#121826]">Homeland</p>
+            <p className="display-heading truncate text-lg text-[#17221d]">Homeland</p>
             <p className="hidden truncate text-[11px] font-medium text-[#6f6a5f] min-[420px]:block">
               Verified property marketplace
             </p>
           </div>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-1 rounded-full border border-[#e7e0d2] bg-white/70 p-1 text-sm text-[#5f655f] shadow-sm shadow-stone-200/40">
+          <nav className="hidden md:flex items-center gap-1 rounded-xl border border-[#d9dfd6] bg-white/70 p-1 text-sm text-[#5f655f] shadow-sm shadow-stone-200/40">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="rounded-full px-4 py-2 transition-colors hover:bg-[#f1efe7] hover:text-[#12372a]"
+              className="rounded-lg px-4 py-2 transition-colors hover:bg-[#e9eee8] hover:text-[#164b3a]"
             >
               {link.label}
             </Link>

@@ -29,15 +29,15 @@ const columns = [
 
 export default function Footer() {
   return (
-    <footer className="border-t border-[#e7e0d2] bg-[#12372a] text-white">
+    <footer className="border-t border-[#0e392b] bg-[#164b3a] text-white">
       <div className="page-shell grid gap-10 py-12 md:grid-cols-[2fr_3fr]">
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-sm font-semibold text-[#12372a]">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f4f1eb] text-sm font-semibold text-[#164b3a]">
               H
             </span>
             <div>
-              <p className="text-sm font-semibold text-white">Homeland</p>
+              <p className="display-heading text-lg text-white">Homeland</p>
               <p className="text-xs text-white/60">Trusted Nigerian listings</p>
             </div>
           </div>

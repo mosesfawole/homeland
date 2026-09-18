@@ -4,16 +4,16 @@ export const metadata = {
 
 export default function TrustSafetyPage() {
   return (
-    <div className="bg-slate-50">
+    <div className="bg-[#f4f1eb]">
       <div className="max-w-5xl mx-auto px-4 py-12 space-y-12">
         <section className="space-y-4">
-          <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#e8754f]">
             Trust & Safety
           </p>
-          <h1 className="text-3xl font-semibold text-slate-900">
+          <h1 className="display-heading text-4xl text-[#17221d] md:text-5xl">
             Trust is the foundation of every listing
           </h1>
-          <p className="text-slate-600 leading-relaxed">
+          <p className="max-w-3xl text-[#5f6d63] leading-relaxed">
             Homeland is built to reduce uncertainty for renters, buyers, and
             agents. We combine verification, review workflows, and safety
             guidance so every interaction feels clearer and more reliable.
@@ -21,29 +21,29 @@ export default function TrustSafetyPage() {
         </section>
 
         <section className="grid gap-6 md:grid-cols-3">
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-2">
-            <h2 className="text-lg font-semibold text-slate-900">
+          <div className="rounded-2xl border border-[#d9dfd6] bg-white p-6 space-y-2">
+            <h2 className="text-lg font-semibold text-[#17221d]">
               Agent verification
             </h2>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-[#5f6d63]">
               Agents submit KYC documents before their listings are approved.
               Verification status is shown publicly.
             </p>
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-2">
-            <h2 className="text-lg font-semibold text-slate-900">
+          <div className="rounded-2xl border border-[#d9dfd6] bg-white p-6 space-y-2">
+            <h2 className="text-lg font-semibold text-[#17221d]">
               Listing review
             </h2>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-[#5f6d63]">
               New listings pass through an approval workflow to ensure details
               are complete and consistent.
             </p>
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-2">
-            <h2 className="text-lg font-semibold text-slate-900">
+          <div className="rounded-2xl border border-[#d9dfd6] bg-white p-6 space-y-2">
+            <h2 className="text-lg font-semibold text-[#17221d]">
               Reporting tools
             </h2>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-[#5f6d63]">
               Users can flag suspicious listings so we can review quickly and
               take action.
             </p>

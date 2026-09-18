@@ -50,9 +50,9 @@ export default function PropertyCard({ property }: Props) {
   return (
     <Link
       href={`/property/${property.id}`}
-      className="group block overflow-hidden rounded-[1.5rem] border border-[#e7e0d2] bg-white shadow-sm shadow-stone-200/50 transition duration-200 hover:-translate-y-0.5 hover:border-[#d5c7ad] hover:shadow-xl hover:shadow-stone-200/80"
+      className="group block overflow-hidden rounded-2xl border border-[#d9dfd6] bg-white shadow-sm shadow-stone-200/50 transition duration-300 hover:-translate-y-1 hover:border-[#b8c9bd] hover:shadow-xl hover:shadow-stone-200/80"
     >
-      <div className="relative aspect-[4/3] overflow-hidden bg-[#f1efe7]">
+      <div className="relative aspect-[4/3] overflow-hidden bg-[#e9eee8]">
         {imageUrl ? (
           <Image
             src={imageUrl}
@@ -62,24 +62,24 @@ export default function PropertyCard({ property }: Props) {
             sizes="(max-width: 768px) 100vw, 33vw"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-[#12372a] text-sm font-medium text-white/70">
+            <div className="flex h-full w-full items-center justify-center bg-[#164b3a] text-sm font-medium text-white/70">
             Image pending
           </div>
         )}
 
         <div className="absolute inset-x-3 top-3 flex items-center justify-between gap-2">
-          <span className="rounded-full bg-white/95 px-3 py-1 text-xs font-semibold text-[#12372a] shadow-sm">
+          <span className="rounded-lg bg-white/95 px-3 py-1 text-xs font-semibold text-[#164b3a] shadow-sm">
             {property.listingType === "RENT" ? "For Rent" : "For Sale"}
           </span>
           {property.isFeatured && (
-            <span className="rounded-full bg-[#c7852b] px-3 py-1 text-xs font-semibold text-white shadow-sm">
+            <span className="rounded-lg bg-[#e8754f] px-3 py-1 text-xs font-semibold text-white shadow-sm">
               Featured
             </span>
           )}
         </div>
 
         {property.verificationStatus === "VERIFIED" && (
-          <div className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-[#12372a]/95 px-3 py-1.5 text-xs font-semibold text-white shadow-sm">
+          <div className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 rounded-lg bg-[#164b3a]/95 px-3 py-1.5 text-xs font-semibold text-white shadow-sm">
             <BadgeCheck size={13} /> Listing verified
           </div>
         )}
@@ -135,7 +135,7 @@ export default function PropertyCard({ property }: Props) {
               </span>
             )}
           </div>
-          <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#12372a] text-white transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5">
+          <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#164b3a] text-white transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5">
             <ArrowUpRight size={15} />
           </span>
         </div>

@@ -4,16 +4,16 @@ export const metadata = {
 
 export default function AboutPage() {
   return (
-    <div className="bg-slate-50">
+    <div className="bg-[#f4f1eb]">
       <div className="max-w-5xl mx-auto px-4 py-12 space-y-12">
         <section className="space-y-4">
-          <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#e8754f]">
             About Homeland
           </p>
-          <h1 className="text-3xl font-semibold text-slate-900">
+          <h1 className="display-heading text-4xl text-[#17221d] md:text-5xl">
             A trusted home search for Nigeria, built with agents and renters in mind
           </h1>
-          <p className="text-slate-600 leading-relaxed">
+          <p className="max-w-3xl text-[#5f6d63] leading-relaxed">
             Homeland connects verified agents with serious renters and buyers.
             We focus on transparent listings, consistent review standards, and
             a booking flow that keeps everyone informed. Our goal is simple:
@@ -23,23 +23,23 @@ export default function AboutPage() {
         </section>
 
         <section className="grid gap-6 md:grid-cols-3">
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-2">
-            <h2 className="text-lg font-semibold text-slate-900">Our mission</h2>
-            <p className="text-sm text-slate-600">
+          <div className="rounded-2xl border border-[#d9dfd6] bg-white p-6 space-y-2">
+            <h2 className="text-lg font-semibold text-[#17221d]">Our mission</h2>
+            <p className="text-sm text-[#5f6d63]">
               Make property discovery safer and more predictable by combining
               verified agent profiles with listing quality checks.
             </p>
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-2">
-            <h2 className="text-lg font-semibold text-slate-900">Our promise</h2>
-            <p className="text-sm text-slate-600">
+          <div className="rounded-2xl border border-[#d9dfd6] bg-white p-6 space-y-2">
+            <h2 className="text-lg font-semibold text-[#17221d]">Our promise</h2>
+            <p className="text-sm text-[#5f6d63]">
               Every listing is reviewed before it becomes active, and every
               agent goes through a verification process.
             </p>
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-2">
-            <h2 className="text-lg font-semibold text-slate-900">Our focus</h2>
-            <p className="text-sm text-slate-600">
+          <div className="rounded-2xl border border-[#d9dfd6] bg-white p-6 space-y-2">
+            <h2 className="text-lg font-semibold text-[#17221d]">Our focus</h2>
+            <p className="text-sm text-[#5f6d63]">
               Clarity in pricing, clear availability signals, and quick
               communication between renters and agents.
             </p>

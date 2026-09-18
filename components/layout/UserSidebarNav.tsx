@@ -13,7 +13,7 @@ export default function UserSidebarNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="space-y-2 text-sm">
+    <nav className="space-y-1.5 text-sm">
       {links.map((link) => {
         const isActive =
           pathname === link.href || pathname.startsWith(`${link.href}/`);
@@ -21,10 +21,10 @@ export default function UserSidebarNav() {
           <Link
             key={link.href}
             href={link.href}
-            className={`block px-3 py-2 rounded-lg border transition ${
+            className={`block border-l-2 px-3 py-2.5 transition ${
               isActive
-                ? "bg-slate-900 text-white border-slate-900 shadow-sm"
-                : "bg-slate-50 text-slate-700 border-transparent hover:bg-white hover:border-slate-200 hover:text-slate-900"
+                ? "border-[#e8754f] bg-[#e9eee8] font-semibold text-[#164b3a]"
+                : "border-transparent text-[#6f7b70] hover:border-[#b8c9bd] hover:bg-[#f7f8f5] hover:text-[#17221d]"
             }`}
           >
             {link.label}
